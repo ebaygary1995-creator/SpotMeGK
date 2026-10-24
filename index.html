@@ -40,12 +40,13 @@
             📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">SpotMeGK</span>
         </h1>
         
-        <!-- Weather Widget -->
+        <!-- Weather Widget Header Preview -->
         <div id="weather-widget" class="hidden sm:flex items-center gap-1.5 text-[11px] bg-slate-900/60 px-2.5 py-0.5 rounded-full border border-slate-700 text-slate-300">
             🌤️ <span id="weather-text">Loading...</span>
         </div>
 
         <div class="flex items-center gap-1">
+            <button id="toggle-weather-hub" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">🌤️ Weather</button>
             <button id="toggle-stats" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📊 Stats</button>
             <button id="toggle-calendar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📅 Cal</button>
             <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">⭐ Favs (<span id="fav-count">0</span>)</button>
@@ -68,7 +69,8 @@
 
         <div class="flex items-center gap-1">
             <button id="center-me" class="bg-pink-600/20 border border-pink-500/40 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold">🔴 Me</button>
-            <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2 py-1 rounded text-[11px] font-semibold">🟣 Ines <span id="partner-status" class="text-[9px] text-slate-400">(Connecting...)</span></button>
+            <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2.5 py-1 rounded text-[11px] font-semibold">🟣 Ines <span id="partner-status" class="text-[9px] text-slate-400"></span></button>
+            <button id="toggle-follow" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Auto-Follow Partner">👀 <span id="follow-label">Off</span></button>
             <button id="toggle-mode" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Battery Mode">⚡ <span id="mode-label">Fast</span></button>
             <button id="toggle-theme" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[11px] border border-slate-600">🌗</button>
         </div>
@@ -99,9 +101,28 @@
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📊 Stats</h2><button id="close-stats" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div id="stats-content" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs"></div>
         </div>
+
+        <div id="weather-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200">🌤️ Weather & Warnings Hub</h2>
+                <button id="close-weather" class="text-slate-400 text-sm font-bold px-2">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                    <div class="font-bold text-pink-400 mb-1">📍 Local Forecast Status</div>
+                    <div id="hub-weather-desc" class="text-slate-300">Acquiring local meteorological data...</div>
+                </div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="font-bold text-slate-200">🇮🇪 Met Éireann Official Links</div>
+                    <a href="https://www.met.ie/warnings" target="_blank" class="block bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-semibold transition">⚠️ Live Weather Warnings</a>
+                    <a href="https://www.met.ie/forecasts/leinster" target="_blank" class="block bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded text-center border border-slate-600 transition">☁️ Leinster Regional Forecast</a>
+                    <a href="https://www.met.ie/radar" target="_blank" class="block bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded text-center border border-slate-600 transition">🌧️ National Rainfall Radar</a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Bottom Bar -->
+    <!-- Compact Clean Horizontal Bottom Bar -->
     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 backdrop-blur border border-slate-700 px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 max-w-[95vw] overflow-x-auto">
         <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap shadow">📍 Meet</button>
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
@@ -119,11 +140,7 @@
         const GITHUB_REPO = "SpotMeGK";
         const GARY_PHONE = "+353858086112";
         const INES_PHONE = "+353873871437";
-        
-        // ===================================================
-        // SET TO TRUE ON INES'S PHONE, FALSE ON GARY'S PHONE
         const IS_INES_PHONE = false; 
-        // ===================================================
 
         const targetSOSNumber = IS_INES_PHONE ? GARY_PHONE : INES_PHONE;
         const myRoleKey = IS_INES_PHONE ? 'ines' : 'gary';
@@ -133,13 +150,13 @@
         const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
 
         const map = L.map('map').setView([53.1438, -6.97], 11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/*.png', { maxZoom: 19 }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
         let breadcrumbCoordinates = [];
         const breadcrumbPolyline = L.polyline([], { color: '#ec4899', weight: 4, opacity: 0.7 }).addTo(map);
 
         let myMarker = null, partnerMarker = null, meetBeaconMarker = null, geofenceCircle = null;
-        let watchID = null, isSharing = true, isBatterySaver = false;
+        let watchID = null, isSharing = true, isBatterySaver = false, isAutoFollow = false;
         let lastLat = null, lastLng = null, lastAltitude = null, myLastLat = null, myLastLng = null, partnerLastLat = null, partnerLastLng = null;
         let totalDistance = 0, topSpeed = 0, elevationGain = 0, tripStartTime = new Date();
         
@@ -159,9 +176,11 @@
         const toggleThemeBtn = document.getElementById('toggle-theme');
         const toggleModeBtn = document.getElementById('toggle-mode');
         const modeLabel = document.getElementById('mode-label');
+        const toggleFollowBtn = document.getElementById('toggle-follow');
+        const followLabel = document.getElementById('follow-label');
         
-        const sidebar = document.getElementById('sidebar'), calendarSidebar = document.getElementById('calendar-sidebar'), statsSidebar = document.getElementById('stats-sidebar');
-        const favoritesListEl = document.getElementById('favorites-list'), calendarListEl = document.getElementById('calendar-list'), statsContentEl = document.getElementById('stats-content');
+        const sidebar = document.getElementById('sidebar'), calendarSidebar = document.getElementById('calendar-sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar');
+        const favoritesListEl = document.getElementById('favorites-list'), calendarListEl = document.getElementById('calendar-list'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc');
         const favCountEl = document.getElementById('fav-count'), calCountEl = document.getElementById('cal-count');
         const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
         const alertBanner = document.getElementById('alert-banner'), alertText = document.getElementById('alert-text'), weatherText = document.getElementById('weather-text');
@@ -199,6 +218,13 @@
             startTracking();
         });
 
+        toggleFollowBtn.addEventListener('click', () => {
+            isAutoFollow = !isAutoFollow;
+            followLabel.textContent = isAutoFollow ? "On" : "Off";
+            toggleFollowBtn.classList.toggle('bg-purple-600/40', isAutoFollow);
+            alert(`Auto-Follow Partner: ${isAutoFollow ? 'Enabled' : 'Disabled'}`);
+        });
+
         saveRoomBtn.addEventListener('click', () => {
             if(roomInput.value.trim()) {
                 currentRoom = roomInput.value.trim();
@@ -208,12 +234,21 @@
             }
         });
 
-        document.getElementById('toggle-sidebar').addEventListener('click', () => { sidebar.classList.toggle('hidden'); calendarSidebar.classList.add('hidden'); statsSidebar.classList.add('hidden'); });
+        function closeAllSidebars() {
+            sidebar.classList.add('hidden');
+            calendarSidebar.classList.add('hidden');
+            statsSidebar.classList.add('hidden');
+            weatherSidebar.classList.add('hidden');
+        }
+
+        document.getElementById('toggle-sidebar').addEventListener('click', () => { closeAllSidebars(); sidebar.classList.toggle('hidden'); });
         document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('hidden'));
-        document.getElementById('toggle-calendar').addEventListener('click', () => { calendarSidebar.classList.toggle('hidden'); sidebar.classList.add('hidden'); statsSidebar.classList.add('hidden'); });
+        document.getElementById('toggle-calendar').addEventListener('click', () => { closeAllSidebars(); calendarSidebar.classList.toggle('hidden'); });
         document.getElementById('close-calendar').addEventListener('click', () => calendarSidebar.classList.add('hidden'));
-        document.getElementById('toggle-stats').addEventListener('click', () => { statsSidebar.classList.toggle('hidden'); sidebar.classList.add('hidden'); calendarSidebar.classList.add('hidden'); updateStats(); });
+        document.getElementById('toggle-stats').addEventListener('click', () => { closeAllSidebars(); statsSidebar.classList.toggle('hidden'); updateStats(); });
         document.getElementById('close-stats').addEventListener('click', () => statsSidebar.classList.add('hidden'));
+        document.getElementById('toggle-weather-hub').addEventListener('click', () => { closeAllSidebars(); weatherSidebar.classList.toggle('hidden'); });
+        document.getElementById('close-weather').addEventListener('click', () => weatherSidebar.classList.add('hidden'));
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3; 
@@ -225,40 +260,54 @@
 
         async function fetchWeather(lat, lng) {
             try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m`);
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,weather_code`);
+                if (!res.ok) throw new Error('Network error');
                 const data = await res.json();
-                weatherText.textContent = `${Math.round(data.current.temperature_2m)}°C • Wind: ${Math.round(data.current.wind_speed_10m)} km/h`;
-            } catch(e) { weatherText.textContent = "Weather unavailable"; }
+                const temp = Math.round(data.current.temperature_2m);
+                const wind = Math.round(data.current.wind_speed_10m);
+                weatherText.textContent = `${temp}°C • Wind: ${wind} km/h`;
+                hubWeatherDesc.innerHTML = `Current Temperature: <b>${temp}°C</b><br>Wind Speed: <b>${wind} km/h</b><br><span class="text-slate-400">Calibrated for your current position in Ireland.</span>`;
+            } catch(e) { 
+                weatherText.textContent = "Weather offline"; 
+                hubWeatherDesc.textContent = "Unable to fetch live meteorological data.";
+            }
         }
 
-        window.sendCheckIn = async function(statusMsg) {
+        window.sendCheckIn = function(statusMsg) {
             if(!currentRoom) return;
-            try {
-                await fetch(`https://api.jsonbin.io/v3/b`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': '$2a$10$7Xv...' }, // Public relay simulation
-                    body: JSON.stringify({ room: currentRoom, sender: myRoleKey, alert: statusMsg, time: new Date().toISOString() })
-                });
-            } catch(e){}
+            localStorage.setItem(`tracker_${currentRoom}_alert`, JSON.stringify({ msg: statusMsg, time: new Date().toISOString() }));
             playChime();
             alert("Broadcasted: " + statusMsg);
         }
+
+        let lastCheckedAlertTime = null;
+        setInterval(() => {
+            if(!currentRoom) return;
+            let alertData = localStorage.getItem(`tracker_${currentRoom}_alert`);
+            if(alertData) {
+                const parsed = JSON.parse(alertData);
+                if(parsed.time !== lastCheckedAlertTime && (new Date() - new Date(parsed.time)) / 1000 < 15) {
+                    lastCheckedAlertTime = parsed.time;
+                    alertText.textContent = `Partner status: ${parsed.msg}`;
+                    alertBanner.classList.remove('hidden');
+                    playChime();
+                } else if((new Date() - new Date(parsed.time)) / 1000 >= 15) {
+                    alertBanner.classList.add('hidden');
+                }
+            }
+        }, 3000);
 
         let deviceBatteryPct = null;
         if (navigator.getBattery) {
             navigator.getBattery().then(b => deviceBatteryPct = Math.round(b.level * 100));
         }
 
-        // CLOUD CROSS-DEVICE SYNC VIA FREE PUBLIC BIN / STORAGE RELAY
         async function syncLocationData(lat, lng, accuracy, speed) {
             if (!currentRoom) return;
             try {
                 const payload = { lat, lng, accuracy, speed, battery: deviceBatteryPct, time: new Date().toISOString() };
-                
-                // Save locally and push to cloud sync namespace
                 localStorage.setItem(`tracker_${currentRoom}_${myRoleKey}`, JSON.stringify(payload));
                 
-                // Pull partner data from local storage sync bridge
                 let partnerData = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
                 if(partnerData) {
                     const parsed = JSON.parse(partnerData);
@@ -268,7 +317,6 @@
             } catch (err) {}
         }
 
-        // Poll partner updates every 2 seconds
         setInterval(() => {
             if (!currentRoom) return;
             let partnerData = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
@@ -276,10 +324,17 @@
                 const parsed = JSON.parse(partnerData);
                 partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
                 updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
+                if (isAutoFollow && partnerLastLat && partnerLastLng) {
+                    map.setView([partnerLastLat, partnerLastLng], map.getZoom());
+                }
             }
         }, 2000);
 
-        const garyIconStyle = L.icon({ iconUrl: myImageUrl, iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -44], className: 'custom-profile-marker' });
+        function getMarkerIcon(speed) {
+            const iconUrl = speed > 30 ? 'https://cdn-icons-png.flaticon.com/512/741/741407.png' : myImageUrl; // Car/Vehicle badge if > 30 km/h
+            return L.icon({ iconUrl: iconUrl, iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -44], className: 'custom-profile-marker' });
+        }
+
         const inesIconStyle = L.icon({ iconUrl: partnerImageUrl, iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -44], className: 'custom-profile-marker' });
 
         function updatePartnerMap(lat, lng, timestamp, battery) {
@@ -289,7 +344,14 @@
             partnerStatusEl.textContent = `(${timeText}${batteryText})`;
 
             const partnerName = IS_INES_PHONE ? "Gary" : "Ines";
-            const popupContent = `<div style="text-align:center; padding:4px;"><b>${partnerName}'s Location</b><br><span style="font-size:11px; color:#64748b;">Updated ${timeText}${batteryText}</span><br><a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display:inline-block; margin-top:8px; background:#2563eb; color:white; padding:5px 12px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">🧭 Navigate Here</a></div>`;
+            const popupContent = `
+                <div style="text-align:center; padding:4px;">
+                    <b>${partnerName}'s Location</b><br>
+                    <span style="font-size:11px; color:#64748b;">Updated ${timeText}${batteryText}</span><br>
+                    <button onclick="navigator.clipboard.writeText('${lat}, ${lng}');alert('Coordinates copied!');" style="margin-top:6px; background:#475569; color:white; padding:3px 8px; border-radius:4px; font-size:10px; border:none; cursor:pointer;">📋 Copy Coords</button><br>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 10px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">🧭 Navigate Here</a>
+                </div>
+            `;
 
             if (!partnerMarker) {
                 partnerMarker = L.marker([lat, lng], { icon: inesIconStyle }).addTo(map).bindPopup(popupContent);
@@ -308,7 +370,7 @@
                         myLastLng = pos.coords.longitude;
                         map.setView([myLastLat, myLastLng], 16);
                         if (!myMarker) {
-                            myMarker = L.marker([myLastLat, myLastLng], { icon: garyIconStyle }).addTo(map).bindPopup("You");
+                            myMarker = L.marker([myLastLat, myLastLng], { icon: getMarkerIcon(0) }).addTo(map).bindPopup("You");
                         } else {
                             myMarker.setLatLng([myLastLat, myLastLng]);
                         }
@@ -368,6 +430,7 @@
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Top Speed:</b> ${topSpeed} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Average Speed:</b> ${avgSpeed.toFixed(1)} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Active Time:</b> ${Math.round((new Date() - tripStartTime)/60000)} mins</div>
+                <button onclick="if(myLastLat){navigator.clipboard.writeText(myLastLat+', '+myLastLng);alert('My coordinates copied!');}" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg border border-slate-600 font-semibold mt-2">📋 Copy My Coordinates</button>
             `;
         }
 
@@ -433,12 +496,23 @@
                 speedValEl.textContent = `${speedKmh}k/h`;
                 climbValEl.textContent = `${Math.round(elevationGain)}m`;
 
+                if (safeZone) {
+                    const distToSafeZone = calculateDistance(lat, lng, safeZone.lat, safeZone.lng);
+                    if (distToSafeZone <= safeZone.radius && (!window.wasInSafeZone)) {
+                        window.wasInSafeZone = true;
+                        sendCheckIn(`Arrived safely at ${safeZone.name}!`);
+                    } else if (distToSafeZone > safeZone.radius + 50) {
+                        window.wasInSafeZone = false;
+                    }
+                }
+
                 if (!myMarker) {
-                    myMarker = L.marker([lat, lng], { icon: garyIconStyle }).addTo(map).bindPopup("You");
+                    myMarker = L.marker([lat, lng], { icon: getMarkerIcon(speedKmh) }).addTo(map).bindPopup("You");
                     map.setView([lat, lng], 15);
                     fetchWeather(lat, lng);
                 } else {
                     myMarker.setLatLng([lat, lng]);
+                    myMarker.setIcon(getMarkerIcon(speedKmh)); // Dynamically update marker based on speed (>30km/h = driving icon)
                 }
                 syncLocationData(lat, lng, acc, speedKmh);
             }, (err) => {
