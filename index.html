@@ -57,7 +57,7 @@
     <!-- Configuration & Quick Status Bar -->
     <div class="bg-slate-800/90 p-2 border-b border-slate-700 flex flex-wrap gap-2 items-center justify-between text-xs z-30 shadow-md">
         <div class="flex items-center gap-1.5">
-            <input type="text" id="room-input" placeholder="Room-PIN (e.g. room-1995)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-36">
+            <input type="text" id="room-input" placeholder="Room-PIN (e.g. gary-ines-1995)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-40">
             <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[11px] font-medium">Save</button>
         </div>
         
@@ -202,8 +202,8 @@
         const myName = IS_INES_PHONE ? 'Ines' : 'Gary';
         const partnerName = IS_INES_PHONE ? 'Gary' : 'Ines';
 
-        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-1995';
-        const currentPin = currentRoom.split('-').pop(); // Extracts trailing PIN for encryption
+        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-1995';
+        const currentPin = '1995'; // Fixed secure pin key
 
         const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
         const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
@@ -280,7 +280,7 @@
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
-            alert("Backup generated! Select 'Save to Google Drive' when prompted.");
+            alert("Backup generated!");
         }
 
         window.exportWorkoutsToSheets = function() {
@@ -297,7 +297,7 @@
             document.body.appendChild(link);
             link.click();
             link.remove();
-            alert("Spreadsheet CSV exported! You can now upload this directly into Google Drive / Google Sheets.");
+            alert("Spreadsheet CSV exported!");
         }
 
         function playChime() {
@@ -329,7 +329,7 @@
             if(roomInput.value.trim()) {
                 currentRoom = roomInput.value.trim();
                 localStorage.setItem('spotmegk_room', currentRoom);
-                alert('Secure Room updated: ' + currentRoom);
+                alert('Room updated: ' + currentRoom);
                 window.location.reload();
             }
         });
@@ -479,17 +479,30 @@
         }
         renderWorkouts();
 
-        renderChat();
+        function renderChat() {
+            chatMessagesEl.innerHTML = chatHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No messages yet. Say hello!</div>` : '';
+            chatHistory.forEach(msg => {
+                const isMe = msg.sender === myName;
+                chatMessagesEl.innerHTML += `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-0.5">
+                        <span class="text-[10px] text-slate-400">${msg.sender}</span>
+                        <div class="p-2 rounded-xl text-xs max-w-[85%] ${isMe ? 'bg-pink-600 text-white rounded-br-none' : 'bg-slate-900 text-slate-200 border border-slate-700 rounded-bl-none'}">
+                            ${msg.text}
+                        </div>
+                    </div>
+                `;
+            });
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
 
         sendChatBtn.addEventListener('click', () => {
             hapticFeedback();
             const text = chatInputEl.value.trim();
             if(!text || !currentRoom) return;
-            const secretPin = currentRoom.split('-').pop();
             
             const newMsg = { sender: myName, text, time: new Date().toISOString() };
             chatHistory.push(newMsg);
-            localStorage.setItem(`tracker_${currentRoom}_chat`, encryptData(JSON.stringify(chatHistory), secretPin));
+            localStorage.setItem(`tracker_${currentRoom}_chat`, encryptData(JSON.stringify(chatHistory), currentPin));
             chatInputEl.value = '';
             renderChat();
         });
@@ -498,8 +511,7 @@
             if(!currentRoom) return;
             let rawChat = localStorage.getItem(`tracker_${currentRoom}_chat`);
             if(rawChat) {
-                const secretPin = currentRoom.split('-').pop();
-                const decryptedStr = decryptData(rawChat, secretPin);
+                const decryptedStr = decryptData(rawChat, currentPin);
                 if(decryptedStr) {
                     const parsedChat = JSON.parse(decryptedStr);
                     if(parsedChat.length !== chatHistory.length) {
@@ -537,8 +549,7 @@
         window.sendCheckIn = function(statusMsg) {
             hapticFeedback();
             if(!currentRoom) return;
-            const secretPin = currentRoom.split('-').pop();
-            const encryptedAlert = encryptData(statusMsg, secretPin);
+            const encryptedAlert = encryptData(statusMsg, currentPin);
             localStorage.setItem(`tracker_${currentRoom}_alert`, encryptedAlert);
             playChime();
             alert("Broadcasted: " + statusMsg);
@@ -549,8 +560,7 @@
             if(!currentRoom) return;
             let rawAlert = localStorage.getItem(`tracker_${currentRoom}_alert`);
             if(rawAlert) {
-                const secretPin = currentRoom.split('-').pop();
-                const decryptedJson = decryptData(rawAlert, secretPin);
+                const decryptedJson = decryptData(rawAlert, currentPin);
                 if(decryptedJson && decryptedJson !== lastCheckedAlertTime) {
                     lastCheckedAlertTime = decryptedJson;
                     alertText.textContent = `${partnerName} status: ${decryptedJson}`;
@@ -568,13 +578,12 @@
         async function syncLocationData(lat, lng, accuracy, speed) {
             if (!currentRoom) return;
             try {
-                const secretPin = currentRoom.split('-').pop();
                 const payload = JSON.stringify({ lat, lng, accuracy, speed, battery: deviceBatteryPct, time: new Date().toISOString() });
-                localStorage.setItem(`tracker_${currentRoom}_${myRoleKey}`, encryptData(payload, secretPin));
+                localStorage.setItem(`tracker_${currentRoom}_${myRoleKey}`, encryptData(payload, currentPin));
                 
                 let rawPartner = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
                 if(rawPartner) {
-                    const decryptedPartnerStr = decryptData(rawPartner, secretPin);
+                    const decryptedPartnerStr = decryptData(rawPartner, currentPin);
                     if(decryptedPartnerStr) {
                         const parsed = JSON.parse(decryptedPartnerStr);
                         partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
@@ -588,15 +597,11 @@
             if (!currentRoom) return;
             let rawPartner = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
             if (rawPartner) {
-                const secretPin = currentRoom.split('-').pop();
-                const decryptedPartnerStr = decryptData(rawPartner, secretPin);
+                const decryptedPartnerStr = decryptData(rawPartner, currentPin);
                 if(decryptedPartnerStr) {
                     const parsed = JSON.parse(decryptedPartnerStr);
                     partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
                     updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
-                    if (isAutoFollow && partnerLastLat && partnerLastLng) {
-                        map.setView([partnerLastLat, partnerLastLng], map.getZoom());
-                    }
                 }
             }
         }, 2000);
@@ -646,13 +651,20 @@
                             myMarker.setLatLng([myLastLat, myLastLng]);
                         }
                     },
-                    (err) => alert("GPS Fix Failed"),
+                    (err) => alert("GPS Fix Failed. Please check browser location permissions."),
                     { enableHighAccuracy: true, timeout: 10000 }
                 );
             }
         });
 
-        centerPartnerBtn.addEventListener('click', () => { hapticFeedback(); if (partnerLastLat) map.setView([partnerLastLat, partnerLastLng], 16); else alert("Waiting for partner signal..."); });
+        centerPartnerBtn.addEventListener('click', () => { 
+            hapticFeedback(); 
+            if (partnerLastLat !== null && partnerLastLng !== null) {
+                map.setView([partnerLastLat, partnerLastLng], 16); 
+            } else {
+                alert("Waiting for partner signal..."); 
+            }
+        });
 
         parkCarBtn.addEventListener('click', () => {
             hapticFeedback();
@@ -705,7 +717,7 @@
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Top Speed:</b> ${topSpeed} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Average Speed:</b> ${avgSpeed.toFixed(1)} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Active Time:</b> ${Math.round((new Date() - tripStartTime)/60000)} mins</div>
-                <button onclick="exportDataToDrive()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-semibold mt-2">💾 Backup to Google Drive</button>
+                <button onclick="exportDataToDrive()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-semibold mt-2">💾 Backup Data</button>
                 <button onclick="if(myLastLat){navigator.clipboard.writeText(myLastLat+', '+myLastLng);alert('My coordinates copied!');}" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg border border-slate-600 font-semibold mt-1">📋 Copy My Coordinates</button>
             `;
         }
@@ -732,7 +744,7 @@
             if (!navigator.geolocation) return;
             const options = {
                 enableHighAccuracy: true,
-                maximumAge: isBatterySaver ? 15000 : 5000,
+                maximumAge: 5000,
                 timeout: 10000
             };
             watchID = navigator.geolocation.watchPosition((pos) => {
