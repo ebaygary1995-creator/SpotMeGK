@@ -19,6 +19,18 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             background-color: white;
         }
+        /* Custom dark mode map tile filter adjustment */
+        .dark-tiles {
+            filter: brightness(0.7) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+        }
+        @keyframes pulse-beacon {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.6; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .beacon-pulse {
+            animation: pulse-beacon 1.5s infinite;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
@@ -48,13 +60,16 @@
             <input type="text" id="room-input" placeholder="Pairing Code" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pink-500 w-28">
             <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-medium transition">Save</button>
         </div>
-        <!-- Off-Map Quick Jump Buttons -->
+        <!-- Off-Map Quick Jump & Theme Buttons -->
         <div class="flex items-center gap-2">
-            <button id="center-me" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-300 px-3 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1">
-                🔴 Jump to Me
+            <button id="center-me" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-300 px-3 py-1 rounded-lg text-xs font-semibold transition">
+                🔴 Me
             </button>
-            <button id="center-partner" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 px-3 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1">
-                🟣 Jump to Ines <span id="partner-status" class="text-[10px] text-slate-400 font-normal">(-s)</span>
+            <button id="center-partner" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 px-3 py-1 rounded-lg text-xs font-semibold transition">
+                🟣 Ines <span id="partner-status" class="text-[10px] text-slate-400 font-normal">(-s)</span>
+            </button>
+            <button id="toggle-theme" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-semibold transition border border-slate-600" title="Toggle Dark/Light Map">
+                🌗 Theme
             </button>
         </div>
     </div>
@@ -94,9 +109,9 @@
     </div>
 
     <!-- Floating Control Panel -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-3 justify-center">
-        <button id="toggle-sharing" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
-            <span id="share-icon">🟢</span> <span id="share-text">Sharing Active</span>
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-2.5 justify-center">
+        <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl text-xs font-semibold transition shadow" title="Drop flashing beacon where you are">
+            📍 Meet Me
         </button>
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-600">
             📌 Save Spot
@@ -115,7 +130,6 @@
         const GITHUB_USER = "ebaygary1995-creator"; 
         const GITHUB_REPO = "SpotMeGK";
 
-        // Phone Number Configuration for Automated SOS SMS
         const GARY_PHONE = "+353858086112";
         const INES_PHONE = "+353873871437";
 
@@ -129,15 +143,20 @@
 
         const map = L.map('map').setView([53.1438, -6.97], 11);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
+        // Breadcrumb Trail Polyline Setup
+        let breadcrumbCoordinates = [];
+        const breadcrumbPolyline = L.polyline([], { color: '#ec4899', weight: 4, opacity: 0.7 }).addTo(map);
+
         let myMarker = null;
         let partnerMarker = null;
+        let meetBeaconMarker = null;
         let watchID = null;
-        let isSharing = true; // Enabled automatically on load
+        let isSharing = true;
 
         let lastLat = null;
         let lastLng = null;
@@ -153,13 +172,12 @@
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
         const connectionStatus = document.getElementById('connection-status');
-        const toggleSharingBtn = document.getElementById('toggle-sharing');
-        const shareText = document.getElementById('share-text');
-        const shareIcon = document.getElementById('share-icon');
         const saveSpotBtn = document.getElementById('save-spot');
+        const meetHereBtn = document.getElementById('meet-here-btn');
         const sosBtn = document.getElementById('sos-btn');
         const centerMeBtn = document.getElementById('center-me');
         const centerPartnerBtn = document.getElementById('center-partner');
+        const toggleThemeBtn = document.getElementById('toggle-theme');
         
         const toggleSidebarBtn = document.getElementById('toggle-sidebar');
         const closeSidebarBtn = document.getElementById('close-sidebar');
@@ -180,6 +198,21 @@
 
         let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026';
         roomInput.value = currentRoom;
+
+        // Dark Mode Map Theme Toggle
+        let isDarkMode = localStorage.getItem('spotmegk_darkmap') === 'true';
+        if (isDarkMode) {
+            document.querySelector('.leaflet-tile-pane').classList.add('dark-tiles');
+        }
+        toggleThemeBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('spotmegk_darkmap', isDarkMode);
+            if (isDarkMode) {
+                document.querySelector('.leaflet-tile-pane').classList.add('dark-tiles');
+            } else {
+                document.querySelector('.leaflet-tile-pane').classList.remove('dark-tiles');
+            }
+        });
 
         saveRoomBtn.addEventListener('click', () => {
             if(roomInput.value.trim()) {
@@ -220,10 +253,21 @@
             return R * c;
         }
 
+        // Attempt to read device battery status if available
+        let deviceBatteryPct = null;
+        if (navigator.getBattery) {
+            navigator.getBattery().then(battery => {
+                deviceBatteryPct = Math.round(battery.level * 100);
+                battery.addEventListener('levelchange', () => {
+                    deviceBatteryPct = Math.round(battery.level * 100);
+                });
+            });
+        }
+
         async function syncLocationData(lat, lng, accuracy, speed) {
             if (!currentRoom) return;
             try {
-                const payload = { room: currentRoom, lat, lng, accuracy, speed, time: new Date().toISOString() };
+                const payload = { room: currentRoom, lat, lng, accuracy, speed, battery: deviceBatteryPct, time: new Date().toISOString() };
                 localStorage.setItem(`tracker_${currentRoom}_me`, JSON.stringify(payload));
                 
                 let partnerData = localStorage.getItem(`tracker_${currentRoom}_partner`);
@@ -231,7 +275,7 @@
                     const parsed = JSON.parse(partnerData);
                     partnerLastLat = parsed.lat;
                     partnerLastLng = parsed.lng;
-                    updatePartnerMap(parsed.lat, parsed.lng, parsed.time);
+                    updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
                 }
             } catch (err) {
                 console.error("Sync error", err);
@@ -245,7 +289,7 @@
                 const parsed = JSON.parse(partnerData);
                 partnerLastLat = parsed.lat;
                 partnerLastLng = parsed.lng;
-                updatePartnerMap(parsed.lat, parsed.lng, parsed.time);
+                updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
             }
         }, 3000);
 
@@ -265,15 +309,16 @@
             className: 'custom-profile-marker'
         });
 
-        function updatePartnerMap(lat, lng, timestamp) {
+        function updatePartnerMap(lat, lng, timestamp, battery) {
             const secondsAgo = timestamp ? Math.round((new Date() - new Date(timestamp)) / 1000) : 0;
             const timeText = secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo/60)}m ago`;
-            partnerStatusEl.textContent = `(${timeText})`;
+            const batteryText = battery !== null && battery !== undefined ? ` • 🔋 ${battery}%` : '';
+            partnerStatusEl.textContent = `(${timeText}${batteryText})`;
 
             const popupContent = `
                 <div style="text-align:center; padding:4px;">
                     <b style="font-size:13px;">Ines's Location</b><br>
-                    <span style="font-size:11px; color:#64748b;">Updated ${timeText}</span><br>
+                    <span style="font-size:11px; color:#64748b;">Updated ${timeText}${batteryText}</span><br>
                     <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display:inline-block; margin-top:8px; background:#2563eb; color:white; padding:5px 12px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">🧭 Navigate Here</a>
                 </div>
             `;
@@ -302,6 +347,27 @@
             } else {
                 alert("Waiting for Ines's location signal...");
             }
+        });
+
+        // "Meet Me Here" Beacon Feature
+        meetHereBtn.addEventListener('click', () => {
+            if (myLastLat === null || myLastLng === null) {
+                alert("Acquiring GPS fix... Please wait a second.");
+                return;
+            }
+            if (meetBeaconMarker) {
+                map.removeLayer(meetBeaconMarker);
+            }
+            meetBeaconMarker = L.marker([myLastLat, myLastLng], {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="beacon-pulse" style='background-color:#6366f1; width:34px; height:34px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow: 0 0 15px #6366f1;'>📍</div>`,
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 17]
+                })
+            }).addTo(map).bindPopup("<b>Beacon: Meet Me Here!</b>").openPopup();
+
+            alert("Flashing meeting beacon dropped at your location!");
         });
 
         // ================= AUTOMATED SOS SMS =================
@@ -454,7 +520,7 @@
         loadPersistentPins();
         renderCalendar();
 
-        // ================= AUTOMATIC CONSTANT SHARING =================
+        // ================= AUTOMATIC CONSTANT SHARING & BREADCRUMBS =================
         function startTracking() {
             if (!navigator.geolocation) {
                 alert('Geolocation is not supported by your browser');
@@ -471,6 +537,10 @@
                     
                     myLastLat = lat;
                     myLastLng = lng;
+
+                    // Append to breadcrumb trail history
+                    breadcrumbCoordinates.push([lat, lng]);
+                    breadcrumbPolyline.setLatLngs(breadcrumbCoordinates);
 
                     let speedKmh = 0;
                     if (position.coords.speed !== null && position.coords.speed >= 0) {
@@ -504,22 +574,7 @@
             );
         }
 
-        // Trigger automatic tracking immediately on page load
         startTracking();
-
-        // Optional Pause/Resume Toggle Button
-        toggleSharingBtn.addEventListener('click', () => {
-            isSharing = !isSharing;
-            if (isSharing) {
-                shareText.textContent = "Sharing Active";
-                shareIcon.textContent = "🟢";
-                toggleSharingBtn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5";
-            } else {
-                shareText.textContent = "Sharing Paused";
-                shareIcon.textContent = "⏸️";
-                toggleSharingBtn.className = "bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-amber-600/30 transition flex items-center gap-1.5";
-            }
-        });
     </script>
 </body>
 </html>
