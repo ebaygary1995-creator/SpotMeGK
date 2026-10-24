@@ -28,7 +28,10 @@
         <h1 class="text-lg font-bold flex items-center gap-2">
             📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">SpotMeGK</span>
         </h1>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <button id="toggle-calendar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-600 flex items-center gap-1.5">
+                📅 Calendar (<span id="cal-count">0</span>)
+            </button>
             <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-600 flex items-center gap-1.5">
                 ⭐ Favorites (<span id="fav-count">0</span>)
             </button>
@@ -56,14 +59,14 @@
         </div>
     </div>
 
-    <!-- Main Workspace Container (Map + Sidebar Drawer) -->
+    <!-- Main Workspace Container (Map + Sidebars) -->
     <div class="flex-1 flex relative overflow-hidden">
         
         <!-- Map Container -->
         <div id="map" class="flex-1 h-full z-10"></div>
 
         <!-- Saved Locations Sidebar Drawer -->
-        <div id="sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 transition-all duration-300 shadow-2xl">
+        <div id="sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 transition-all duration-300 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
                 <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">⭐ Saved Favorites</h2>
                 <button id="close-sidebar" class="text-slate-400 hover:text-white text-sm font-bold px-2 py-0.5 rounded">&times;</button>
@@ -72,20 +75,38 @@
                 <div class="text-slate-500 text-center py-8">No saved favorites yet.<br>Tap "📌 Save Spot" on the map!</div>
             </div>
         </div>
+
+        <!-- Calendar / Itinerary Sidebar Drawer -->
+        <div id="calendar-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 transition-all duration-300 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">📅 Trip Itinerary</h2>
+                <button id="close-calendar" class="text-slate-400 hover:text-white text-sm font-bold px-2 py-0.5 rounded">&times;</button>
+            </div>
+            <div class="p-3 border-b border-slate-700/60 bg-slate-900/40">
+                <button id="add-event-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-2 rounded-lg font-semibold text-xs transition shadow">
+                    + Add New Event / Trip Date
+                </button>
+            </div>
+            <div id="calendar-list" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs">
+                <div class="text-slate-500 text-center py-8">No calendar events yet.<br>Click the button above to add one!</div>
+            </div>
+        </div>
     </div>
 
     <!-- Floating Control Panel -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-4 justify-center">
-        <button id="toggle-track" class="bg-pink-600 hover:bg-pink-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-2">
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-3 justify-center">
+        <button id="toggle-track" class="bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-1.5">
             <span id="track-icon">🔴</span> <span id="track-text">Start Sharing</span>
         </button>
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-600">
             📌 Save Spot
         </button>
-        <div class="text-xs text-slate-400 flex flex-col border-l border-slate-700 pl-4">
+        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-rose-600/40 animate-pulse flex items-center gap-1">
+            🚨 SOS
+        </button>
+        <div class="text-[11px] text-slate-400 flex flex-col border-l border-slate-700 pl-3">
             <span>Speed: <strong id="speed-val" class="text-emerald-400">0 km/h</strong></span>
-            <span>Distance: <strong id="dist-val" class="text-slate-200">0.0 km</strong></span>
-            <span>Accuracy: <strong id="accuracy-val" class="text-slate-200">-</strong></span>
+            <span>Dist: <strong id="dist-val" class="text-slate-200">0.0 km</strong></span>
         </div>
     </div>
 
@@ -117,45 +138,70 @@
         let partnerLastLat = null;
         let partnerLastLng = null;
         let totalDistance = 0; 
+        
         let savedFavorites = JSON.parse(localStorage.getItem('spotmegk_favorites') || '[]');
+        let savedCalendarEvents = JSON.parse(localStorage.getItem('spotmegk_calendar') || '[]');
 
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
         const connectionStatus = document.getElementById('connection-status');
         const toggleTrackBtn = document.getElementById('toggle-track');
         const saveSpotBtn = document.getElementById('save-spot');
+        const sosBtn = document.getElementById('sos-btn');
         const centerMeBtn = document.getElementById('center-me');
         const centerPartnerBtn = document.getElementById('center-partner');
+        
         const toggleSidebarBtn = document.getElementById('toggle-sidebar');
         const closeSidebarBtn = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');
         const favoritesListEl = document.getElementById('favorites-list');
         const favCountEl = document.getElementById('fav-count');
+
+        const toggleCalendarBtn = document.getElementById('toggle-calendar');
+        const closeCalendarBtn = document.getElementById('close-calendar');
+        const calendarSidebar = document.getElementById('calendar-sidebar');
+        const calendarListEl = document.getElementById('calendar-list');
+        const calCountEl = document.getElementById('cal-count');
+        const addEventBtn = document.getElementById('add-event-btn');
+
         const trackText = document.getElementById('track-text');
         const trackIcon = document.getElementById('track-icon');
         const speedValEl = document.getElementById('speed-val');
         const distValEl = document.getElementById('dist-val');
-        const accuracyValEl = document.getElementById('accuracy-val');
         const partnerStatusEl = document.getElementById('partner-status');
 
-        let currentRoom = localStorage.getItem('couple_tracker_room') || 'our-private-room-2026';
+        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026';
         roomInput.value = currentRoom;
+
+        if(currentRoom) {
+            connectionStatus.textContent = "Synced";
+            connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-400 font-medium border border-emerald-500/30";
+        }
 
         saveRoomBtn.addEventListener('click', () => {
             if(roomInput.value.trim()) {
                 currentRoom = roomInput.value.trim();
-                localStorage.setItem('couple_tracker_room', currentRoom);
+                localStorage.setItem('spotmegk_room', currentRoom);
                 connectionStatus.textContent = "Synced";
                 connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-400 font-medium border border-emerald-500/30";
+                alert('Room saved and connected: ' + currentRoom);
             }
         });
 
-        // Sidebar Toggle Handler
         toggleSidebarBtn.addEventListener('click', () => {
             sidebar.classList.toggle('hidden');
+            calendarSidebar.classList.add('hidden');
         });
         closeSidebarBtn.addEventListener('click', () => {
             sidebar.classList.add('hidden');
+        });
+
+        toggleCalendarBtn.addEventListener('click', () => {
+            calendarSidebar.classList.toggle('hidden');
+            sidebar.classList.add('hidden');
+        });
+        closeCalendarBtn.addEventListener('click', () => {
+            calendarSidebar.classList.add('hidden');
         });
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -240,7 +286,6 @@
             }
         }
 
-        // Off-map Jump Buttons
         centerMeBtn.addEventListener('click', () => {
             if (myLastLat !== null && myLastLng !== null) {
                 map.setView([myLastLat, myLastLng], 16);
@@ -257,7 +302,20 @@
             }
         });
 
-        // Render Favorites List in Sidebar
+        // ================= SOS SMS BUTTON =================
+        sosBtn.addEventListener('click', () => {
+            if (myLastLat === null || myLastLng === null) {
+                alert("Please start location sharing first so we have your GPS coordinates for the SOS message!");
+                return;
+            }
+            const mapsLink = `https://www.google.com/maps?q=${myLastLat},${myLastLng}`;
+            const sosMessage = encodeURIComponent(`🚨 SOS! I need help. Here is my exact location: ${mapsLink}`);
+            
+            // Opens native SMS app with prefilled message
+            window.location.href = `sms:?body=${sosMessage}`;
+        });
+
+        // ================= FAVORITES LOGIC =================
         function renderFavorites() {
             favCountEl.textContent = savedFavorites.length;
             if (savedFavorites.length === 0) {
@@ -283,17 +341,37 @@
             });
         }
 
+        function loadPersistentPins() {
+            savedFavorites.forEach(fav => {
+                const popupHTML = `
+                    <div style="text-align:center; padding:4px;">
+                        <b style="font-size:13px;">📌 ${fav.name}</b><br>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${fav.lat},${fav.lng}" target="_blank" style="display:inline-block; margin-top:8px; background:#2563eb; color:white; padding:5px 12px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">🧭 Navigate Here</a>
+                    </div>
+                `;
+                L.marker([fav.lat, fav.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style='background-color:#eab308; width:30px; height:30px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow: 0 0 10px #eab308;'>📌</div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(map).bindPopup(popupHTML);
+            });
+        }
+
         window.jumpToFav = function(lat, lng) {
             map.setView([lat, lng], 17);
+            sidebar.classList.add('hidden');
         }
 
         window.deleteFavorite = function(index) {
             savedFavorites.splice(index, 1);
             localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites));
             renderFavorites();
+            window.location.reload();
         }
 
-        // Save Spot Button Handler
         saveSpotBtn.addEventListener('click', () => {
             if (!myMarker) {
                 alert("Start sharing your location first to save a spot!");
@@ -326,8 +404,55 @@
             }
         });
 
-        // Initialize favorites on load
+        // ================= CALENDAR LOGIC =================
+        function renderCalendar() {
+            calCountEl.textContent = savedCalendarEvents.length;
+            if (savedCalendarEvents.length === 0) {
+                calendarListEl.innerHTML = `<div class="text-slate-500 text-center py-8">No calendar events yet.<br>Click the button above to add one!</div>`;
+                return;
+            }
+
+            savedCalendarEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            calendarListEl.innerHTML = "";
+            savedCalendarEvents.forEach((ev, index) => {
+                const item = document.createElement('div');
+                item.className = "bg-slate-900/80 border border-slate-700/80 p-2.5 rounded-xl flex flex-col gap-1 shadow-sm";
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-pink-400 text-xs">📅 ${ev.date}</span>
+                        <button onclick="deleteCalendarEvent(${index})" class="text-rose-400 hover:text-rose-300 text-[10px] font-semibold">Delete</button>
+                    </div>
+                    <div class="font-semibold text-slate-200 text-xs">${ev.title}</div>
+                    ${ev.notes ? `<div class="text-slate-400 text-[11px]">${ev.notes}</div>` : ''}
+                `;
+                calendarListEl.appendChild(item);
+            });
+        }
+
+        addEventBtn.addEventListener('click', () => {
+            const title = prompt("Enter event title or trip plan (e.g., 'Dinner in Town' or 'Cycling Trip'):");
+            if (!title) return;
+            const date = prompt("Enter date (YYYY-MM-DD or e.g., 'Oct 28'):", new Date().toISOString().split('T')[0]);
+            if (!date) return;
+            const notes = prompt("Enter any extra notes (optional):", "");
+
+            const newEvent = { title, date, notes };
+            savedCalendarEvents.push(newEvent);
+            localStorage.setItem('spotmegk_calendar', JSON.stringify(savedCalendarEvents));
+            renderCalendar();
+            calendarSidebar.classList.remove('hidden');
+        });
+
+        window.deleteCalendarEvent = function(index) {
+            savedCalendarEvents.splice(index, 1);
+            localStorage.setItem('spotmegk_calendar', JSON.stringify(savedCalendarEvents));
+            renderCalendar();
+        }
+
         renderFavorites();
+        loadPersistentPins();
+        renderCalendar();
 
         toggleTrackBtn.addEventListener('click', () => {
             if (!isSharing) {
@@ -338,7 +463,7 @@
                 
                 trackText.textContent = "Stop Sharing";
                 trackIcon.textContent = "⏸️";
-                toggleTrackBtn.className = "bg-rose-600 hover:bg-rose-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-rose-600/30 transition flex items-center gap-2";
+                toggleTrackBtn.className = "bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-rose-600/30 transition flex items-center gap-1.5";
                 isSharing = true;
                 totalDistance = 0;
                 lastLat = null;
@@ -366,7 +491,6 @@
 
                         speedValEl.textContent = `${speedKmh} km/h`;
                         distValEl.textContent = `${(totalDistance / 1000).toFixed(2)} km`;
-                        accuracyValEl.textContent = `${accuracy}m`;
 
                         if (!myMarker) {
                             myMarker = L.marker([lat, lng], {
@@ -390,9 +514,8 @@
                 isSharing = false;
                 trackText.textContent = "Start Sharing";
                 trackIcon.textContent = "🔴";
-                toggleTrackBtn.className = "bg-pink-600 hover:bg-pink-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-2";
+                toggleTrackBtn.className = "bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-1.5";
                 speedValEl.textContent = "0 km/h";
-                accuracyValEl.textContent = "-";
                 connectionStatus.textContent = "Disconnected";
                 connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30";
             }
