@@ -21,49 +21,61 @@
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 h-screen flex flex-col">
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
     <!-- Header -->
-    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex justify-between items-center">
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex justify-between items-center z-30">
         <h1 class="text-lg font-bold flex items-center gap-2">
             📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">SpotMeGK</span>
         </h1>
-        <div id="connection-status" class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30">
-            Disconnected
+        <div class="flex items-center gap-3">
+            <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-600 flex items-center gap-1.5">
+                ⭐ Favorites (<span id="fav-count">0</span>)
+            </button>
+            <div id="connection-status" class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30">
+                Disconnected
+            </div>
         </div>
     </header>
 
-    <!-- Configuration / Pairing Bar -->
-    <div class="bg-slate-800/60 p-3 border-b border-slate-700/60 flex flex-wrap gap-2 items-center justify-between text-sm">
+    <!-- Configuration & Quick Navigation Bar -->
+    <div class="bg-slate-800/90 p-3 border-b border-slate-700 flex flex-wrap gap-3 items-center justify-between text-sm z-30 shadow-md">
         <div class="flex items-center gap-2">
-            <label for="room-input" class="text-slate-400 font-medium">Pairing Code:</label>
-            <input type="text" id="room-input" placeholder="e.g. gary-ines-secret" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pink-500">
+            <label for="room-input" class="text-slate-400 font-medium text-xs">Room:</label>
+            <input type="text" id="room-input" placeholder="Pairing Code" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pink-500 w-28">
             <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-medium transition">Connect</button>
         </div>
-        <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span>Ines Status: <strong id="partner-status" class="text-purple-400">Waiting...</strong></span>
-            <div class="flex -space-x-2">
-                <img src="ines.png" alt="Ines" class="w-6 h-6 rounded-full ring-2 ring-slate-800">
-                <img src="gary.png" alt="Gary" class="w-6 h-6 rounded-full ring-2 ring-slate-800">
+        <!-- Off-Map Quick Jump Buttons -->
+        <div class="flex items-center gap-2">
+            <button id="center-me" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-300 px-3 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                🔴 Jump to Me
+            </button>
+            <button id="center-partner" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 px-3 py-1 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                🟣 Jump to Ines <span id="partner-status" class="text-[10px] text-slate-400 font-normal">(-s)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace Container (Map + Sidebar Drawer) -->
+    <div class="flex-1 flex relative overflow-hidden">
+        
+        <!-- Map Container -->
+        <div id="map" class="flex-1 h-full z-10"></div>
+
+        <!-- Saved Locations Sidebar Drawer -->
+        <div id="sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 transition-all duration-300 shadow-2xl">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200 flex items-center gap-2">⭐ Saved Favorites</h2>
+                <button id="close-sidebar" class="text-slate-400 hover:text-white text-sm font-bold px-2 py-0.5 rounded">&times;</button>
+            </div>
+            <div id="favorites-list" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs">
+                <div class="text-slate-500 text-center py-8">No saved favorites yet.<br>Tap "📌 Save Spot" on the map!</div>
             </div>
         </div>
     </div>
 
-    <!-- Main Map Container -->
-    <div id="map" class="flex-1 w-full z-10 relative">
-        <!-- Quick Center Floating Map Buttons -->
-        <div class="absolute top-4 right-4 z-20 flex flex-col gap-2">
-            <button id="center-me" title="Center on Me" class="bg-slate-800/90 hover:bg-slate-700 text-pink-400 p-2.5 rounded-full shadow-lg border border-slate-700 backdrop-blur font-bold text-xs transition">
-                🔴 Me
-            </button>
-            <button id="center-partner" title="Center on Ines" class="bg-slate-800/90 hover:bg-slate-700 text-purple-400 p-2.5 rounded-full shadow-lg border border-slate-700 backdrop-blur font-bold text-xs transition">
-                🟣 Ines
-            </button>
-        </div>
-    </div>
-
     <!-- Floating Control Panel -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-4 justify-center">
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-4 justify-center">
         <button id="toggle-track" class="bg-pink-600 hover:bg-pink-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-2">
             <span id="track-icon">🔴</span> <span id="track-text">Start Sharing</span>
         </button>
@@ -105,7 +117,7 @@
         let partnerLastLat = null;
         let partnerLastLng = null;
         let totalDistance = 0; 
-        let lastPingTime = null;
+        let savedFavorites = JSON.parse(localStorage.getItem('spotmegk_favorites') || '[]');
 
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
@@ -114,6 +126,11 @@
         const saveSpotBtn = document.getElementById('save-spot');
         const centerMeBtn = document.getElementById('center-me');
         const centerPartnerBtn = document.getElementById('center-partner');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar');
+        const sidebar = document.getElementById('sidebar');
+        const favoritesListEl = document.getElementById('favorites-list');
+        const favCountEl = document.getElementById('fav-count');
         const trackText = document.getElementById('track-text');
         const trackIcon = document.getElementById('track-icon');
         const speedValEl = document.getElementById('speed-val');
@@ -131,6 +148,14 @@
                 connectionStatus.textContent = "Synced";
                 connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-400 font-medium border border-emerald-500/30";
             }
+        });
+
+        // Sidebar Toggle Handler
+        toggleSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+        });
+        closeSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.add('hidden');
         });
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -165,7 +190,6 @@
             }
         }
 
-        // Periodic check to update partner heartbeat timer even if user isn't moving
         setInterval(() => {
             if (!currentRoom) return;
             let partnerData = localStorage.getItem(`tracker_${currentRoom}_partner`);
@@ -196,13 +220,13 @@
         function updatePartnerMap(lat, lng, timestamp) {
             const secondsAgo = timestamp ? Math.round((new Date() - new Date(timestamp)) / 1000) : 0;
             const timeText = secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo/60)}m ago`;
-            partnerStatusEl.textContent = `Active (${timeText})`;
+            partnerStatusEl.textContent = `(${timeText})`;
 
             const popupContent = `
-                <div style="text-align:center;">
-                    <b>Ines's Location</b><br>
+                <div style="text-align:center; padding:4px;">
+                    <b style="font-size:13px;">Ines's Location</b><br>
                     <span style="font-size:11px; color:#64748b;">Updated ${timeText}</span><br>
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 10px; border-radius:4px; font-size:11px; text-decoration:none; font-weight:bold;">Navigate Here</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display:inline-block; margin-top:8px; background:#2563eb; color:white; padding:5px 12px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">🧭 Navigate Here</a>
                 </div>
             `;
 
@@ -216,12 +240,12 @@
             }
         }
 
-        // Center Map Quick Buttons
+        // Off-map Jump Buttons
         centerMeBtn.addEventListener('click', () => {
             if (myLastLat !== null && myLastLng !== null) {
                 map.setView([myLastLat, myLastLng], 16);
             } else {
-                alert("Your location is not active yet.");
+                alert("Your location is not active yet. Tap 'Start Sharing' first!");
             }
         });
 
@@ -233,20 +257,61 @@
             }
         });
 
-        // Save Named Location Feature with Google Maps Link
+        // Render Favorites List in Sidebar
+        function renderFavorites() {
+            favCountEl.textContent = savedFavorites.length;
+            if (savedFavorites.length === 0) {
+                favoritesListEl.innerHTML = `<div class="text-slate-500 text-center py-8">No saved favorites yet.<br>Tap "📌 Save Spot" on the map!</div>`;
+                return;
+            }
+
+            favoritesListEl.innerHTML = "";
+            savedFavorites.forEach((fav, index) => {
+                const item = document.createElement('div');
+                item.className = "bg-slate-900/80 border border-slate-700/80 p-2.5 rounded-xl flex flex-col gap-1.5 shadow-sm";
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-slate-200 text-xs">📌 ${fav.name}</span>
+                        <button onclick="deleteFavorite(${index})" class="text-rose-400 hover:text-rose-300 text-[10px] font-semibold">Delete</button>
+                    </div>
+                    <div class="flex gap-2 mt-1">
+                        <button onclick="jumpToFav(${fav.lat}, ${fav.lng})" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 rounded text-[11px] font-medium border border-slate-700 transition">Show on Map</button>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${fav.lat},${fav.lng}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-1 rounded text-[11px] font-medium text-center transition">🧭 Navigate</a>
+                    </div>
+                `;
+                favoritesListEl.appendChild(item);
+            });
+        }
+
+        window.jumpToFav = function(lat, lng) {
+            map.setView([lat, lng], 17);
+        }
+
+        window.deleteFavorite = function(index) {
+            savedFavorites.splice(index, 1);
+            localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites));
+            renderFavorites();
+        }
+
+        // Save Spot Button Handler
         saveSpotBtn.addEventListener('click', () => {
             if (!myMarker) {
                 alert("Start sharing your location first to save a spot!");
                 return;
             }
             const pos = myMarker.getLatLng();
-            const pinName = prompt("Name this saved spot (e.g., 'Parking Space' or 'Meeting Point'):", "Saved Spot");
+            const pinName = prompt("Name this saved spot (e.g., 'Nice Restaurant' or 'Parking Spot'):", "Favorite Spot");
             
             if (pinName) {
+                const newFav = { name: pinName, lat: pos.lat, lng: pos.lng };
+                savedFavorites.push(newFav);
+                localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites));
+                renderFavorites();
+
                 const popupHTML = `
-                    <div style="text-align:center;">
-                        <b>📌 ${pinName}</b><br>
-                        <a href="https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 10px; border-radius:4px; font-size:11px; text-decoration:none; font-weight:bold;">Navigate Here</a>
+                    <div style="text-align:center; padding:4px;">
+                        <b style="font-size:13px;">📌 ${pinName}</b><br>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}" target="_blank" style="display:inline-block; margin-top:8px; background:#2563eb; color:white; padding:5px 12px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">🧭 Navigate Here</a>
                     </div>
                 `;
 
@@ -260,6 +325,9 @@
                 }).addTo(map).bindPopup(popupHTML).openPopup();
             }
         });
+
+        // Initialize favorites on load
+        renderFavorites();
 
         toggleTrackBtn.addEventListener('click', () => {
             if (!isSharing) {
