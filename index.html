@@ -35,8 +35,8 @@
             <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-600 flex items-center gap-1.5">
                 ⭐ Favorites (<span id="fav-count">0</span>)
             </button>
-            <div id="connection-status" class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30">
-                Disconnected
+            <div id="connection-status" class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-400 font-medium border border-emerald-500/30">
+                Auto-Connected
             </div>
         </div>
     </header>
@@ -46,7 +46,7 @@
         <div class="flex items-center gap-2">
             <label for="room-input" class="text-slate-400 font-medium text-xs">Room:</label>
             <input type="text" id="room-input" placeholder="Pairing Code" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pink-500 w-28">
-            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-medium transition">Connect</button>
+            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-medium transition">Save</button>
         </div>
         <!-- Off-Map Quick Jump Buttons -->
         <div class="flex items-center gap-2">
@@ -95,8 +95,8 @@
 
     <!-- Floating Control Panel -->
     <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-3 justify-center">
-        <button id="toggle-track" class="bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-1.5">
-            <span id="track-icon">🔴</span> <span id="track-text">Start Sharing</span>
+        <button id="toggle-sharing" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5">
+            <span id="share-icon">🟢</span> <span id="share-text">Sharing Active</span>
         </button>
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-600">
             📌 Save Spot
@@ -137,7 +137,7 @@
         let myMarker = null;
         let partnerMarker = null;
         let watchID = null;
-        let isSharing = false;
+        let isSharing = true; // Enabled automatically on load
 
         let lastLat = null;
         let lastLng = null;
@@ -153,7 +153,9 @@
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
         const connectionStatus = document.getElementById('connection-status');
-        const toggleTrackBtn = document.getElementById('toggle-track');
+        const toggleSharingBtn = document.getElementById('toggle-sharing');
+        const shareText = document.getElementById('share-text');
+        const shareIcon = document.getElementById('share-icon');
         const saveSpotBtn = document.getElementById('save-spot');
         const sosBtn = document.getElementById('sos-btn');
         const centerMeBtn = document.getElementById('center-me');
@@ -172,8 +174,6 @@
         const calCountEl = document.getElementById('cal-count');
         const addEventBtn = document.getElementById('add-event-btn');
 
-        const trackText = document.getElementById('track-text');
-        const trackIcon = document.getElementById('track-icon');
         const speedValEl = document.getElementById('speed-val');
         const distValEl = document.getElementById('dist-val');
         const partnerStatusEl = document.getElementById('partner-status');
@@ -181,18 +181,12 @@
         let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026';
         roomInput.value = currentRoom;
 
-        if(currentRoom) {
-            connectionStatus.textContent = "Synced";
-            connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-400 font-medium border border-emerald-500/30";
-        }
-
         saveRoomBtn.addEventListener('click', () => {
             if(roomInput.value.trim()) {
                 currentRoom = roomInput.value.trim();
                 localStorage.setItem('spotmegk_room', currentRoom);
-                connectionStatus.textContent = "Synced";
-                connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-400 font-medium border border-emerald-500/30";
-                alert('Room saved and connected: ' + currentRoom);
+                alert('Room updated: ' + currentRoom);
+                window.location.reload();
             }
         });
 
@@ -298,7 +292,7 @@
             if (myLastLat !== null && myLastLng !== null) {
                 map.setView([myLastLat, myLastLng], 16);
             } else {
-                alert("Your location is not active yet. Tap 'Start Sharing' first!");
+                alert("Acquiring GPS fix... Please wait a moment.");
             }
         });
 
@@ -313,13 +307,11 @@
         // ================= AUTOMATED SOS SMS =================
         sosBtn.addEventListener('click', () => {
             if (myLastLat === null || myLastLng === null) {
-                alert("Please start location sharing first so we have your GPS coordinates for the SOS message!");
+                alert("Acquiring GPS fix... Please try again in a second.");
                 return;
             }
             const mapsLink = `https://www.google.com/maps?q=${myLastLat},${myLastLng}`;
             const sosMessage = encodeURIComponent(`🚨 SOS! I need help. Here is my exact location: ${mapsLink}`);
-            
-            // Instantly opens SMS app addressed to partner's number with location pre-filled
             window.location.href = `sms:${targetSOSNumber}?body=${sosMessage}`;
         });
 
@@ -382,7 +374,7 @@
 
         saveSpotBtn.addEventListener('click', () => {
             if (!myMarker) {
-                alert("Start sharing your location first to save a spot!");
+                alert("Acquiring GPS fix... Please try again in a moment.");
                 return;
             }
             const pos = myMarker.getLatLng();
@@ -462,70 +454,70 @@
         loadPersistentPins();
         renderCalendar();
 
-        toggleTrackBtn.addEventListener('click', () => {
-            if (!isSharing) {
-                if (!navigator.geolocation) {
-                    alert('Geolocation is not supported by your browser');
-                    return;
-                }
-                
-                trackText.textContent = "Stop Sharing";
-                trackIcon.textContent = "⏸️";
-                toggleTrackBtn.className = "bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-rose-600/30 transition flex items-center gap-1.5";
-                isSharing = true;
-                totalDistance = 0;
-                lastLat = null;
-                lastLng = null;
+        // ================= AUTOMATIC CONSTANT SHARING =================
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
 
-                watchID = navigator.geolocation.watchPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        const accuracy = Math.round(position.coords.accuracy);
-                        
-                        myLastLat = lat;
-                        myLastLng = lng;
+            watchID = navigator.geolocation.watchPosition(
+                (position) => {
+                    if (!isSharing) return;
 
-                        let speedKmh = 0;
-                        if (position.coords.speed !== null && position.coords.speed >= 0) {
-                            speedKmh = Math.round(position.coords.speed * 3.6);
-                        } else if (lastLat !== null && lastLng !== null) {
-                            const distIncrement = calculateDistance(lastLat, lastLng, lat, lng);
-                            totalDistance += distIncrement;
-                        }
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = Math.round(position.coords.accuracy);
+                    
+                    myLastLat = lat;
+                    myLastLng = lng;
 
-                        lastLat = lat;
-                        lastLng = lng;
+                    let speedKmh = 0;
+                    if (position.coords.speed !== null && position.coords.speed >= 0) {
+                        speedKmh = Math.round(position.coords.speed * 3.6);
+                    } else if (lastLat !== null && lastLng !== null) {
+                        const distIncrement = calculateDistance(lastLat, lastLng, lat, lng);
+                        totalDistance += distIncrement;
+                    }
 
-                        speedValEl.textContent = `${speedKmh} km/h`;
-                        distValEl.textContent = `${(totalDistance / 1000).toFixed(2)} km`;
+                    lastLat = lat;
+                    lastLng = lng;
 
-                        if (!myMarker) {
-                            myMarker = L.marker([lat, lng], {
-                                icon: garyIconStyle 
-                            }).addTo(map).bindPopup("Your Location");
-                            map.setView([lat, lng], 15);
-                        } else {
-                            myMarker.setLatLng([lat, lng]);
-                        }
+                    speedValEl.textContent = `${speedKmh} km/h`;
+                    distValEl.textContent = `${(totalDistance / 1000).toFixed(2)} km`;
 
-                        syncLocationData(lat, lng, accuracy, speedKmh);
-                    },
-                    (error) => {
-                        alert('Error obtaining location: ' + error.message);
-                    },
-                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-                );
+                    if (!myMarker) {
+                        myMarker = L.marker([lat, lng], {
+                            icon: garyIconStyle 
+                        }).addTo(map).bindPopup("Your Location");
+                        map.setView([lat, lng], 15);
+                    } else {
+                        myMarker.setLatLng([lat, lng]);
+                    }
 
+                    syncLocationData(lat, lng, accuracy, speedKmh);
+                },
+                (error) => {
+                    console.error('Location error: ' + error.message);
+                },
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+            );
+        }
+
+        // Trigger automatic tracking immediately on page load
+        startTracking();
+
+        // Optional Pause/Resume Toggle Button
+        toggleSharingBtn.addEventListener('click', () => {
+            isSharing = !isSharing;
+            if (isSharing) {
+                shareText.textContent = "Sharing Active";
+                shareIcon.textContent = "🟢";
+                toggleSharingBtn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/30 transition flex items-center gap-1.5";
             } else {
-                if (watchID) navigator.geolocation.clearWatch(watchID);
-                isSharing = false;
-                trackText.textContent = "Start Sharing";
-                trackIcon.textContent = "🔴";
-                toggleTrackBtn.className = "bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-rose-600/30 transition flex items-center gap-1.5";
-                speedValEl.textContent = "0 km/h";
-                connectionStatus.textContent = "Disconnected";
-                connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30";
+                shareText.textContent = "Sharing Paused";
+                shareIcon.textContent = "⏸️";
+                toggleSharingBtn.className = "bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-amber-600/30 transition flex items-center gap-1.5";
             }
         });
     </script>
