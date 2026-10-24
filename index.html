@@ -40,7 +40,7 @@
             <div class="text-3xl">🔒</div>
             <h2 class="font-bold text-base text-white">SpotMeGK Locked</h2>
             <p class="text-xs text-slate-400">Enter your Room-PIN to unlock access.</p>
-            <input type="password" id="lock-pin-input" placeholder="Enter PIN (e.g. 7788)" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-center text-white text-sm focus:outline-none focus:border-pink-500">
+            <input type="password" id="lock-pin-input" placeholder="Enter PIN (e.g. 1995)" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-center text-white text-sm focus:outline-none focus:border-pink-500">
             <button id="unlock-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-2 rounded-lg font-bold text-xs">Unlock App</button>
         </div>
     </div>
@@ -68,7 +68,7 @@
     <!-- Configuration & Quick Status Bar -->
     <div class="bg-slate-800/90 p-2 border-b border-slate-700 flex flex-wrap gap-2 items-center justify-between text-xs z-30 shadow-md">
         <div class="flex items-center gap-1.5">
-            <input type="text" id="room-input" placeholder="Room-PIN (e.g. room-1234)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-36">
+            <input type="text" id="room-input" placeholder="Room-PIN (e.g. room-1995)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-36">
             <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[11px] font-medium">Save</button>
         </div>
         
@@ -213,8 +213,8 @@
         const myName = IS_INES_PHONE ? 'Ines' : 'Gary';
         const partnerName = IS_INES_PHONE ? 'Gary' : 'Ines';
 
-        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-7788';
-        const currentPin = currentRoom.split('-').pop(); // Extracts trailing PIN (e.g. 7788)
+        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-1995';
+        const currentPin = currentRoom.split('-').pop(); // Extracts trailing PIN (e.g. 1995)
 
         // App Lock Passcode Logic
         const lockScreen = document.getElementById('lock-screen');
@@ -794,7 +794,7 @@
                 }
                 if (currentAlt !== null) lastAltitude = currentAlt;
 
-                if(speedKsmh > topSpeed) topSpeed = speedKmh;
+                if(speedKmh > topSpeed) topSpeed = speedKmh;
                 if(lastLat && lastLng) totalDistance += calculateDistance(lastLat, lastLng, lat, lng);
                 lastLat = lat; lastLng = lng;
 
