@@ -34,6 +34,17 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
+    <!-- App Lock Screen Overlay -->
+    <div id="lock-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl w-80 text-center space-y-4">
+            <div class="text-3xl">🔒</div>
+            <h2 class="font-bold text-base text-white">SpotMeGK Locked</h2>
+            <p class="text-xs text-slate-400">Enter your Room-PIN to unlock access.</p>
+            <input type="password" id="lock-pin-input" placeholder="Enter PIN (e.g. 7788)" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-center text-white text-sm focus:outline-none focus:border-pink-500">
+            <button id="unlock-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-2 rounded-lg font-bold text-xs">Unlock App</button>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="bg-slate-800 border-b border-slate-700 p-2.5 shadow-md flex justify-between items-center z-30">
         <h1 class="text-sm font-bold flex items-center gap-1.5">
@@ -159,12 +170,19 @@
                     <div>Elevation Climb: <strong id="w-climb" class="text-sky-400">0 m</strong></div>
                     <div>Avg Speed: <strong id="w-avg-speed" class="text-emerald-400">0.0 km/h</strong></div>
                 </div>
-                <div id="workout-history-section" class="space-y-2">
-                    <div class="font-bold text-slate-200 mt-2">Saved Workouts</div>
+
+                <div class="flex border-b border-slate-700">
+                    <button id="tab-gary-workouts" class="flex-1 py-1.5 font-bold text-pink-400 border-b-2 border-pink-500 text-center">Gary's Workouts</button>
+                    <button id="tab-ines-workouts" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines's Workouts</button>
+                </div>
+
+                <div id="workout-history-section" class="space-y-2 pt-1">
                     <div id="workout-history-list" class="space-y-2">
                         <div class="text-slate-500 text-center py-4">No completed workouts yet</div>
                     </div>
                 </div>
+
+                <button onclick="exportWorkoutsToSheets()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold mt-2">📊 Export to Google Sheets (CSV)</button>
             </div>
         </div>
     </div>
@@ -195,6 +213,22 @@
         const myName = IS_INES_PHONE ? 'Ines' : 'Gary';
         const partnerName = IS_INES_PHONE ? 'Gary' : 'Ines';
 
+        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-7788';
+        const currentPin = currentRoom.split('-').pop(); // Extracts trailing PIN (e.g. 7788)
+
+        // App Lock Passcode Logic
+        const lockScreen = document.getElementById('lock-screen');
+        const lockPinInput = document.getElementById('lock-pin-input');
+        const unlockBtn = document.getElementById('unlock-btn');
+
+        unlockBtn.addEventListener('click', () => {
+            if (lockPinInput.value.trim() === currentPin) {
+                lockScreen.classList.add('hidden');
+            } else {
+                alert("Incorrect PIN!");
+            }
+        });
+
         const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
         const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
 
@@ -212,9 +246,11 @@
         let savedFavorites = JSON.parse(localStorage.getItem('spotmegk_favorites') || '[]');
         let safeZone = JSON.parse(localStorage.getItem('spotmegk_safezone') || 'null');
         let chatHistory = JSON.parse(localStorage.getItem('spotmegk_chat') || '[]');
-        let workoutHistory = JSON.parse(localStorage.getItem('spotmegk_workouts') || '[]');
+        
+        let garyWorkouts = JSON.parse(localStorage.getItem('spotmegk_workouts_gary') || '[]');
+        let inesWorkouts = JSON.parse(localStorage.getItem('spotmegk_workouts_ines') || '[]');
+        let activeWorkoutTab = 'gary';
 
-        // Workout state
         let isWorkoutActive = false, isWorkoutPaused = false;
         let activeWorkoutType = 'Cycle', workoutSeconds = 0, workoutDist = 0, workoutClimb = 0, workoutTimer = null;
 
@@ -239,7 +275,6 @@
         const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
         const alertBanner = document.getElementById('alert-banner'), alertText = document.getElementById('alert-text'), weatherText = document.getElementById('weather-text');
 
-        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-7788';
         roomInput.value = currentRoom;
 
         function hapticFeedback() {
@@ -261,7 +296,7 @@
 
         window.exportDataToDrive = function() {
             hapticFeedback();
-            const backupData = { favorites: savedFavorites, safeZone: safeZone, chat: chatHistory, workouts: workoutHistory, exportDate: new Date().toISOString() };
+            const backupData = { favorites: savedFavorites, safeZone: safeZone, chat: chatHistory, garyWorkouts, inesWorkouts, exportDate: new Date().toISOString() };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -270,6 +305,23 @@
             downloadAnchor.click();
             downloadAnchor.remove();
             alert("Backup generated! Select 'Save to Google Drive' when prompted.");
+        }
+
+        window.exportWorkoutsToSheets = function() {
+            hapticFeedback();
+            const workouts = activeWorkoutTab === 'gary' ? garyWorkouts : inesWorkouts;
+            let csvContent = "data:text/csv;charset=utf-8,Type,Date,Duration,Distance(km),Climb(m),AvgSpeed(km/h)\r\n";
+            workouts.forEach(w => {
+                csvContent += `${w.type},${w.date},${w.duration},${w.distance},${w.climb},${w.avgSpeed}\r\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${activeWorkoutTab}_workouts_sheets.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            alert("Spreadsheet CSV exported! You can now upload this directly into Google Drive / Google Sheets.");
         }
 
         function playChime() {
@@ -314,7 +366,7 @@
             workoutSidebar.classList.add('hidden');
         }
 
-        document.getElementById('toggle-sidebar').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); sidebar.classList.toggle('hidden'); });
+        document.getElementById('toggle-sidebar').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); sidebar.classList.toggle('hidden'); renderFavorites(); });
         document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('hidden'));
         document.getElementById('toggle-stats').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); statsSidebar.classList.toggle('hidden'); updateStats(); });
         document.getElementById('close-stats').addEventListener('click', () => statsSidebar.classList.add('hidden'));
@@ -325,7 +377,22 @@
         document.getElementById('toggle-workouts').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); workoutSidebar.classList.toggle('hidden'); renderWorkouts(); });
         document.getElementById('close-workout').addEventListener('click', () => workoutSidebar.classList.add('hidden'));
 
-        // Workout Logic
+        document.getElementById('tab-gary-workouts').addEventListener('click', () => {
+            hapticFeedback();
+            activeWorkoutTab = 'gary';
+            document.getElementById('tab-gary-workouts').className = "flex-1 py-1.5 font-bold text-pink-400 border-b-2 border-pink-500 text-center";
+            document.getElementById('tab-ines-workouts').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
+            renderWorkouts();
+        });
+
+        document.getElementById('tab-ines-workouts').addEventListener('click', () => {
+            hapticFeedback();
+            activeWorkoutTab = 'ines';
+            document.getElementById('tab-ines-workouts').className = "flex-1 py-1.5 font-bold text-purple-400 border-b-2 border-purple-500 text-center";
+            document.getElementById('tab-gary-workouts').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
+            renderWorkouts();
+        });
+
         const startWorkoutBtn = document.getElementById('start-workout');
         const pauseWorkoutBtn = document.getElementById('pause-workout');
         const stopWorkoutBtn = document.getElementById('stop-workout');
@@ -371,6 +438,7 @@
             const hours = workoutSeconds / 3600;
             const avgSpd = hours > 0 ? (workoutDist / 1000) / hours : 0;
             const completedWorkout = {
+                id: Date.now(),
                 type: activeWorkoutType,
                 date: new Date().toLocaleDateString(),
                 duration: document.getElementById('w-time').textContent,
@@ -379,8 +447,13 @@
                 avgSpeed: avgSpd.toFixed(1)
             };
 
-            workoutHistory.unshift(completedWorkout);
-            localStorage.setItem('spotmegk_workouts', JSON.stringify(workoutHistory));
+            if (IS_INES_PHONE) {
+                inesWorkouts.unshift(completedWorkout);
+                localStorage.setItem('spotmegk_workouts_ines', JSON.stringify(inesWorkouts));
+            } else {
+                garyWorkouts.unshift(completedWorkout);
+                localStorage.setItem('spotmegk_workouts_gary', JSON.stringify(garyWorkouts));
+            }
             
             workoutLiveStats.classList.add('hidden');
             startWorkoutBtn.classList.remove('hidden');
@@ -390,13 +463,34 @@
             alert("Workout finished and saved!");
         });
 
+        window.deleteWorkout = function(id, owner) {
+            hapticFeedback();
+            if(owner === 'gary') {
+                garyWorkouts = garyWorkouts.filter(w => w.id !== id);
+                localStorage.setItem('spotmegk_workouts_gary', JSON.stringify(garyWorkouts));
+            } else {
+                inesWorkouts = inesWorkouts.filter(w => w.id !== id);
+                localStorage.setItem('spotmegk_workouts_ines', JSON.stringify(inesWorkouts));
+            }
+            renderWorkouts();
+        }
+
         function renderWorkouts() {
             const listEl = document.getElementById('workout-history-list');
-            listEl.innerHTML = workoutHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No completed workouts yet</div>` : '';
-            workoutHistory.forEach(w => {
+            const workouts = activeWorkoutTab === 'gary' ? garyWorkouts : inesWorkouts;
+            const ownerKey = activeWorkoutTab;
+            
+            listEl.innerHTML = workouts.length === 0 ? `<div class="text-slate-500 text-center py-4">No completed workouts yet</div>` : '';
+            workouts.forEach(w => {
                 listEl.innerHTML += `
                     <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
-                        <div class="flex justify-between font-bold text-pink-400"><span>${w.type === 'Cycle' ? '🚴' : w.type === 'Walk' ? '🚶' : w.type === 'Run' ? '🏃' : '🥾'} ${w.type}</span><span class="text-[10px] text-slate-400">${w.date}</span></div>
+                        <div class="flex justify-between font-bold text-pink-400">
+                            <span>${w.type === 'Cycle' ? '🚴' : w.type === 'Walk' ? '🚶' : w.type === 'Run' ? '🏃' : '🥾'} ${w.type}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] text-slate-400">${w.date}</span>
+                                <button onclick="deleteWorkout(${w.id}, '${ownerKey}')" class="text-rose-400 text-[10px] hover:underline">Del</button>
+                            </div>
+                        </div>
                         <div class="text-[11px] grid grid-cols-2 gap-1 text-slate-300">
                             <div>Dist: <strong>${w.distance} km</strong></div>
                             <div>Time: <strong>${w.duration}</strong></div>
@@ -673,7 +767,6 @@
                 
                 let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
                 
-                // Auto-pause workout if stationary
                 if (isWorkoutActive && !isWorkoutPaused) {
                     if (speedKmh > 1) {
                         breadcrumbCoordinates.push([lat, lng]);
@@ -701,7 +794,7 @@
                 }
                 if (currentAlt !== null) lastAltitude = currentAlt;
 
-                if(speedKmh > topSpeed) topSpeed = speedKmh;
+                if(speedKsmh > topSpeed) topSpeed = speedKmh;
                 if(lastLat && lastLng) totalDistance += calculateDistance(lastLat, lastLng, lat, lng);
                 lastLat = lat; lastLng = lng;
 
