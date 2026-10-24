@@ -34,17 +34,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
-    <!-- App Lock Screen Overlay -->
-    <div id="lock-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl shadow-2xl w-80 text-center space-y-4">
-            <div class="text-3xl">🔒</div>
-            <h2 class="font-bold text-base text-white">SpotMeGK Locked</h2>
-            <p class="text-xs text-slate-400">Enter your Room-PIN to unlock access.</p>
-            <input type="password" id="lock-pin-input" placeholder="Enter PIN (e.g. 1995)" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-center text-white text-sm focus:outline-none focus:border-pink-500">
-            <button id="unlock-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-2 rounded-lg font-bold text-xs">Unlock App</button>
-        </div>
-    </div>
-
     <!-- Header -->
     <header class="bg-slate-800 border-b border-slate-700 p-2.5 shadow-md flex justify-between items-center z-30">
         <h1 class="text-sm font-bold flex items-center gap-1.5">
@@ -214,20 +203,7 @@
         const partnerName = IS_INES_PHONE ? 'Gary' : 'Ines';
 
         let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-1995';
-        const currentPin = currentRoom.split('-').pop(); // Extracts trailing PIN (e.g. 1995)
-
-        // App Lock Passcode Logic
-        const lockScreen = document.getElementById('lock-screen');
-        const lockPinInput = document.getElementById('lock-pin-input');
-        const unlockBtn = document.getElementById('unlock-btn');
-
-        unlockBtn.addEventListener('click', () => {
-            if (lockPinInput.value.trim() === currentPin) {
-                lockScreen.classList.add('hidden');
-            } else {
-                alert("Incorrect PIN!");
-            }
-        });
+        const currentPin = currentRoom.split('-').pop(); // Extracts trailing PIN for encryption
 
         const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
         const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
