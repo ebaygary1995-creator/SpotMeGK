@@ -41,7 +41,7 @@
             <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-medium transition">Connect</button>
         </div>
         <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span>Avatars Active</span>
+            <span>Ines Status: <strong id="partner-status" class="text-purple-400">Waiting...</strong></span>
             <div class="flex -space-x-2">
                 <img src="ines.png" alt="Ines" class="w-6 h-6 rounded-full ring-2 ring-slate-800">
                 <img src="gary.png" alt="Gary" class="w-6 h-6 rounded-full ring-2 ring-slate-800">
@@ -50,7 +50,17 @@
     </div>
 
     <!-- Main Map Container -->
-    <div id="map" class="flex-1 w-full z-10"></div>
+    <div id="map" class="flex-1 w-full z-10 relative">
+        <!-- Quick Center Floating Map Buttons -->
+        <div class="absolute top-4 right-4 z-20 flex flex-col gap-2">
+            <button id="center-me" title="Center on Me" class="bg-slate-800/90 hover:bg-slate-700 text-pink-400 p-2.5 rounded-full shadow-lg border border-slate-700 backdrop-blur font-bold text-xs transition">
+                🔴 Me
+            </button>
+            <button id="center-partner" title="Center on Ines" class="bg-slate-800/90 hover:bg-slate-700 text-purple-400 p-2.5 rounded-full shadow-lg border border-slate-700 backdrop-blur font-bold text-xs transition">
+                🟣 Ines
+            </button>
+        </div>
+    </div>
 
     <!-- Floating Control Panel -->
     <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-4 justify-center">
@@ -58,7 +68,7 @@
             <span id="track-icon">🔴</span> <span id="track-text">Start Sharing</span>
         </button>
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-600">
-            📌 Save Location
+            📌 Save Spot
         </button>
         <div class="text-xs text-slate-400 flex flex-col border-l border-slate-700 pl-4">
             <span>Speed: <strong id="speed-val" class="text-emerald-400">0 km/h</strong></span>
@@ -85,24 +95,31 @@
 
         let myMarker = null;
         let partnerMarker = null;
-        let savedSpotMarker = null;
         let watchID = null;
         let isSharing = false;
 
         let lastLat = null;
         let lastLng = null;
+        let myLastLat = null;
+        let myLastLng = null;
+        let partnerLastLat = null;
+        let partnerLastLng = null;
         let totalDistance = 0; 
+        let lastPingTime = null;
 
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
         const connectionStatus = document.getElementById('connection-status');
         const toggleTrackBtn = document.getElementById('toggle-track');
         const saveSpotBtn = document.getElementById('save-spot');
+        const centerMeBtn = document.getElementById('center-me');
+        const centerPartnerBtn = document.getElementById('center-partner');
         const trackText = document.getElementById('track-text');
         const trackIcon = document.getElementById('track-icon');
         const speedValEl = document.getElementById('speed-val');
         const distValEl = document.getElementById('dist-val');
         const accuracyValEl = document.getElementById('accuracy-val');
+        const partnerStatusEl = document.getElementById('partner-status');
 
         let currentRoom = localStorage.getItem('couple_tracker_room') || 'our-private-room-2026';
         roomInput.value = currentRoom;
@@ -139,12 +156,26 @@
                 let partnerData = localStorage.getItem(`tracker_${currentRoom}_partner`);
                 if(partnerData) {
                     const parsed = JSON.parse(partnerData);
-                    updatePartnerMap(parsed.lat, parsed.lng);
+                    partnerLastLat = parsed.lat;
+                    partnerLastLng = parsed.lng;
+                    updatePartnerMap(parsed.lat, parsed.lng, parsed.time);
                 }
             } catch (err) {
                 console.error("Sync error", err);
             }
         }
+
+        // Periodic check to update partner heartbeat timer even if user isn't moving
+        setInterval(() => {
+            if (!currentRoom) return;
+            let partnerData = localStorage.getItem(`tracker_${currentRoom}_partner`);
+            if (partnerData) {
+                const parsed = JSON.parse(partnerData);
+                partnerLastLat = parsed.lat;
+                partnerLastLng = parsed.lng;
+                updatePartnerMap(parsed.lat, parsed.lng, parsed.time);
+            }
+        }, 3000);
 
         const garyIconStyle = L.icon({
             iconUrl: myImageUrl,
@@ -162,35 +193,72 @@
             className: 'custom-profile-marker'
         });
 
-        function updatePartnerMap(lat, lng) {
+        function updatePartnerMap(lat, lng, timestamp) {
+            const secondsAgo = timestamp ? Math.round((new Date() - new Date(timestamp)) / 1000) : 0;
+            const timeText = secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo/60)}m ago`;
+            partnerStatusEl.textContent = `Active (${timeText})`;
+
+            const popupContent = `
+                <div style="text-align:center;">
+                    <b>Ines's Location</b><br>
+                    <span style="font-size:11px; color:#64748b;">Updated ${timeText}</span><br>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 10px; border-radius:4px; font-size:11px; text-decoration:none; font-weight:bold;">Navigate Here</a>
+                </div>
+            `;
+
             if (!partnerMarker) {
                 partnerMarker = L.marker([lat, lng], {
                     icon: inesIconStyle 
-                }).addTo(map).bindPopup("Ines's Location");
+                }).addTo(map).bindPopup(popupContent);
             } else {
                 partnerMarker.setLatLng([lat, lng]);
+                partnerMarker.setPopupContent(popupContent);
             }
         }
 
+        // Center Map Quick Buttons
+        centerMeBtn.addEventListener('click', () => {
+            if (myLastLat !== null && myLastLng !== null) {
+                map.setView([myLastLat, myLastLng], 16);
+            } else {
+                alert("Your location is not active yet.");
+            }
+        });
+
+        centerPartnerBtn.addEventListener('click', () => {
+            if (partnerLastLat !== null && partnerLastLng !== null) {
+                map.setView([partnerLastLat, partnerLastLng], 16);
+            } else {
+                alert("Waiting for Ines's location signal...");
+            }
+        });
+
+        // Save Named Location Feature with Google Maps Link
         saveSpotBtn.addEventListener('click', () => {
             if (!myMarker) {
                 alert("Start sharing your location first to save a spot!");
                 return;
             }
             const pos = myMarker.getLatLng();
-            if (savedSpotMarker) {
-                map.removeLayer(savedSpotMarker);
-            }
-            savedSpotMarker = L.marker([pos.lat, pos.lng], {
-                icon: L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div style='background-color:#eab308; width:30px; height:30px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow: 0 0 10px #eab308;'>📌</div>`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
-                })
-            }).addTo(map).bindPopup("Saved Meeting Spot").openPopup();
+            const pinName = prompt("Name this saved spot (e.g., 'Parking Space' or 'Meeting Point'):", "Saved Spot");
             
-            alert("Location pinned on map!");
+            if (pinName) {
+                const popupHTML = `
+                    <div style="text-align:center;">
+                        <b>📌 ${pinName}</b><br>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 10px; border-radius:4px; font-size:11px; text-decoration:none; font-weight:bold;">Navigate Here</a>
+                    </div>
+                `;
+
+                L.marker([pos.lat, pos.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style='background-color:#eab308; width:30px; height:30px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow: 0 0 10px #eab308;'>📌</div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(map).bindPopup(popupHTML).openPopup();
+            }
         });
 
         toggleTrackBtn.addEventListener('click', () => {
@@ -214,6 +282,9 @@
                         const lng = position.coords.longitude;
                         const accuracy = Math.round(position.coords.accuracy);
                         
+                        myLastLat = lat;
+                        myLastLng = lng;
+
                         let speedKmh = 0;
                         if (position.coords.speed !== null && position.coords.speed >= 0) {
                             speedKmh = Math.round(position.coords.speed * 3.6);
