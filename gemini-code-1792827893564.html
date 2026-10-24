@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Couple Tracker</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS & JS for OpenStreetMap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* Custom styling to make profile picture markers perfectly round with glowing borders */
+        .custom-profile-marker {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            background-color: white; /* fallback while image loads */
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-lg font-bold flex items-center gap-2">
+            📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">OurLocation</span>
+        </h1>
+        <div id="connection-status" class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30">
+            Disconnected
+        </div>
+    </header>
+
+    <!-- Configuration / Pairing Bar -->
+    <div class="bg-slate-800/60 p-3 border-b border-slate-700/60 flex flex-wrap gap-2 items-center justify-between text-sm">
+        <div class="flex items-center gap-2">
+            <label for="room-input" class="text-slate-400 font-medium">Pairing Code:</label>
+            <input type="text" id="room-input" placeholder="e.g. gary-ines-secret" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pink-500">
+            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-xs font-medium transition">Connect</button>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span>Avatars Active</span>
+            <div class="flex -space-x-2">
+                <img src="ines.png" alt="Ines" class="w-6 h-6 rounded-full ring-2 ring-slate-800">
+                <img src="gary.png" alt="Gary" class="w-6 h-6 rounded-full ring-2 ring-slate-800">
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Map Container -->
+    <div id="map" class="flex-1 w-full z-10"></div>
+
+    <!-- Floating Control Panel -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-4 justify-center">
+        <button id="toggle-track" class="bg-pink-600 hover:bg-pink-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-2">
+            <span id="track-icon">🔴</span> <span id="track-text">Start Sharing</span>
+        </button>
+        <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-600">
+            📌 Save Location
+        </button>
+        <div class="text-xs text-slate-400 flex flex-col border-l border-slate-700 pl-4">
+            <span>Speed: <strong id="speed-val" class="text-emerald-400">0 km/h</strong></span>
+            <span>Distance: <strong id="dist-val" class="text-slate-200">0.0 km</strong></span>
+            <span>Accuracy: <strong id="accuracy-val" class="text-slate-200">-</strong></span>
+        </div>
+    </div>
+
+    <script>
+        // ================= CONFIGURATION =================
+        // IMPORTANT: Change "garykelly" to your actual GitHub username
+        const GITHUB_USER = "garykelly"; 
+        const GITHUB_REPO = "couple-tracker"; // Usually "couple-tracker" based on previous steps
+        // =================================================
+
+        // Construct direct URLs to your uploaded raw PNG files on GitHub
+        const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
+        const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
+
+        // Initialize Map centered over Ireland
+        const map = L.map('map').setView([53.1438, -6.97], 11);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        let myMarker = null;
+        let partnerMarker = null;
+        let savedSpotMarker = null;
+        let watchID = null;
+        let isSharing = false;
+
+        let lastLat = null;
+        let lastLng = null;
+        let totalDistance = 0; // in meters
+
+        const roomInput = document.getElementById('room-input');
+        const saveRoomBtn = document.getElementById('save-room');
+        const connectionStatus = document.getElementById('connection-status');
+        const toggleTrackBtn = document.getElementById('toggle-track');
+        const saveSpotBtn = document.getElementById('save-spot');
+        const trackText = document.getElementById('track-text');
+        const trackIcon = document.getElementById('track-icon');
+        const speedValEl = document.getElementById('speed-val');
+        const distValEl = document.getElementById('dist-val');
+        const accuracyValEl = document.getElementById('accuracy-val');
+
+        // Load saved room from localStorage if available
+        let currentRoom = localStorage.getItem('couple_tracker_room') || 'our-private-room-2026';
+        roomInput.value = currentRoom;
+
+        saveRoomBtn.addEventListener('click', () => {
+            if(roomInput.value.trim()) {
+                currentRoom = roomInput.value.trim();
+                localStorage.setItem('couple_tracker_room', currentRoom);
+                connectionStatus.textContent = "Synced";
+                connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-400 font-medium border border-emerald-500/30";
+            }
+        });
+
+        // Helper to calculate distance between two GPS points in meters
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Sync data using localStorage simulation (for real remote use, replace this fetch with a free JSON bin API call)
+        async function syncLocationData(lat, lng, accuracy, speed) {
+            if (!currentRoom) return;
+            try {
+                // Send own position
+                const payload = { room: currentRoom, lat, lng, accuracy, speed, time: new Date().toISOString() };
+                localStorage.setItem(`tracker_${currentRoom}_me`, JSON.stringify(payload));
+                
+                // Fetch partner's position
+                let partnerData = localStorage.getItem(`tracker_${currentRoom}_partner`);
+                if(partnerData) {
+                    const parsed = JSON.parse(partnerData);
+                    updatePartnerMap(parsed.lat, parsed.lng);
+                }
+            } catch (err) {
+                console.error("Sync error", err);
+            }
+        }
+
+        // Define the icon style using the uploaded image URL
+        const garyIconStyle = L.icon({
+            iconUrl: myImageUrl,
+            iconSize: [44, 44],    // Width and height of the icon
+            iconAnchor: [22, 44],  // Center the bottom tip of the icon on coordinates
+            popupAnchor: [0, -44], // Lift popup above the head of the icon
+            className: 'custom-profile-marker' // Apply the CSS class defined in <style>
+        });
+
+        const inesIconStyle = L.icon({
+            iconUrl: partnerImageUrl,
+            iconSize: [44, 44],
+            iconAnchor: [22, 44],
+            popupAnchor: [0, -44],
+            className: 'custom-profile-marker'
+        });
+
+        function updatePartnerMap(lat, lng) {
+            if (!partnerMarker) {
+                partnerMarker = L.marker([lat, lng], {
+                    icon: inesIconStyle // Use Ines's cartoon icon
+                }).addTo(map).bindPopup("Ines's Location");
+            } else {
+                partnerMarker.setLatLng([lat, lng]);
+            }
+        }
+
+        // Save Current Location Button Handler
+        saveSpotBtn.addEventListener('click', () => {
+            if (!myMarker) {
+                alert("Start sharing your location first to save a spot!");
+                return;
+            }
+            const pos = myMarker.getLatLng();
+            if (savedSpotMarker) {
+                map.removeLayer(savedSpotMarker);
+            }
+            savedSpotMarker = L.marker([pos.lat, pos.lng], {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div style='background-color:#eab308; width:30px; height:30px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow: 0 0 10px #eab308;'>📌</div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                })
+            }).addTo(map).bindPopup("Saved Meeting Spot").openPopup();
+            
+            alert("Location pinned on map!");
+        });
+
+        // Toggle Sharing Handler
+        toggleTrackBtn.addEventListener('click', () => {
+            if (!isSharing) {
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser');
+                    return;
+                }
+                
+                trackText.textContent = "Stop Sharing";
+                trackIcon.textContent = "⏸️";
+                toggleTrackBtn.className = "bg-rose-600 hover:bg-rose-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-rose-600/30 transition flex items-center gap-2";
+                isSharing = true;
+                totalDistance = 0;
+                lastLat = null;
+                lastLng = null;
+
+                watchID = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const accuracy = Math.round(position.coords.accuracy);
+                        
+                        // Calculate Speed (convert m/s from GPS to km/h)
+                        let speedKmh = 0;
+                        if (position.coords.speed !== null && position.coords.speed >= 0) {
+                            speedKmh = Math.round(position.coords.speed * 3.6);
+                        } else if (lastLat !== null && lastLng !== null) {
+                            // Fallback distance calculation if hardware speed is null
+                            const distIncrement = calculateDistance(lastLat, lastLng, lat, lng);
+                            totalDistance += distIncrement;
+                        }
+
+                        lastLat = lat;
+                        lastLng = lng;
+
+                        // Update UI displays
+                        speedValEl.textContent = `${speedKmh} km/h`;
+                        distValEl.textContent = `${(totalDistance / 1000).toFixed(2)} km`;
+                        accuracyValEl.textContent = `${accuracy}m`;
+
+                        if (!myMarker) {
+                            // Initialize marker with Gary's cartoon icon
+                            myMarker = L.marker([lat, lng], {
+                                icon: garyIconStyle 
+                            }).addTo(map).bindPopup("Your Location");
+                            map.setView([lat, lng], 15);
+                        } else {
+                            // Just move the existing marker
+                            myMarker.setLatLng([lat, lng]);
+                        }
+
+                        // Broadcast data
+                        syncLocationData(lat, lng, accuracy, speedKmh);
+                    },
+                    (error) => {
+                        if (error.code === 1) {
+                            alert("Error: Location Access Denied. Please enable GPS permissions in your browser settings.");
+                        } else {
+                            alert('Error obtaining location: ' + error.message);
+                        }
+                    },
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+                );
+
+            } else {
+                // Stop Tracking
+                if (watchID) navigator.geolocation.clearWatch(watchID);
+                isSharing = false;
+                trackText.textContent = "Start Sharing";
+                trackIcon.textContent = "🔴";
+                toggleTrackBtn.className = "bg-pink-600 hover:bg-pink-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-2";
+                speedValEl.textContent = "0 km/h";
+                accuracyValEl.textContent = "-";
+                connectionStatus.textContent = "Disconnected";
+                connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30";
+            }
+        });
+    </script>
+</body>
+</html>
