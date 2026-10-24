@@ -35,97 +35,82 @@
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
     <!-- Header -->
-    <header class="bg-slate-800 border-b border-slate-700 p-3 shadow-md flex justify-between items-center z-30">
-        <h1 class="text-base font-bold flex items-center gap-2">
+    <header class="bg-slate-800 border-b border-slate-700 p-2.5 shadow-md flex justify-between items-center z-30">
+        <h1 class="text-sm font-bold flex items-center gap-1.5">
             📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">SpotMeGK</span>
         </h1>
         
-        <!-- Weather & Wind Widget -->
-        <div id="weather-widget" class="hidden sm:flex items-center gap-2 text-xs bg-slate-900/60 px-3 py-1 rounded-full border border-slate-700 text-slate-300">
-            🌤️ <span id="weather-text">Loading weather...</span>
+        <!-- Weather Widget -->
+        <div id="weather-widget" class="hidden sm:flex items-center gap-1.5 text-[11px] bg-slate-900/60 px-2.5 py-0.5 rounded-full border border-slate-700 text-slate-300">
+            🌤️ <span id="weather-text">Loading...</span>
         </div>
 
-        <div class="flex items-center gap-1.5">
-            <button id="toggle-stats" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-600">
-                📊 Stats
-            </button>
-            <button id="toggle-calendar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-600">
-                📅 Cal
-            </button>
-            <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-600">
-                ⭐ Favs (<span id="fav-count">0</span>)
-            </button>
+        <div class="flex items-center gap-1">
+            <button id="toggle-stats" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📊 Stats</button>
+            <button id="toggle-calendar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📅 Cal</button>
+            <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">⭐ Favs (<span id="fav-count">0</span>)</button>
         </div>
     </header>
 
     <!-- Configuration & Quick Status Bar -->
-    <div class="bg-slate-800/90 p-2.5 border-b border-slate-700 flex flex-wrap gap-2 items-center justify-between text-sm z-30 shadow-md">
-        <div class="flex items-center gap-2">
-            <input type="text" id="room-input" placeholder="Pairing Code" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-pink-500 w-24">
-            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-xs font-medium transition">Save</button>
-        </div>
-        <!-- Quick Check-In Status Buttons -->
-        <div class="flex items-center gap-1.5 overflow-x-auto py-1">
-            <button onclick="sendCheckIn('🏠 Arrived Safely')" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition">🏠 Safe</button>
-            <button onclick="sendCheckIn('🚗 Heading Home')" class="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition">🚗 Home</button>
-            <button onclick="sendCheckIn('⏰ Running 10m Late')" class="bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-300 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition">⏰ Late</button>
-        </div>
+    <div class="bg-slate-800/90 p-2 border-b border-slate-700 flex flex-wrap gap-2 items-center justify-between text-xs z-30 shadow-md">
         <div class="flex items-center gap-1.5">
-            <button id="center-me" class="bg-pink-600/20 hover:bg-pink-600/30 border border-pink-500/40 text-pink-300 px-2 py-1 rounded-lg text-xs font-semibold transition">🔴 Me</button>
-            <button id="center-partner" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 px-2 py-1 rounded-lg text-xs font-semibold transition">🟣 Ines <span id="partner-status" class="text-[9px] text-slate-400"></span></button>
-            <button id="toggle-theme" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded-lg text-xs font-semibold transition border border-slate-600">🌗</button>
+            <input type="text" id="room-input" placeholder="Room Code" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-24">
+            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[11px] font-medium">Save</button>
+        </div>
+        
+        <!-- Status Check-In Buttons -->
+        <div class="flex items-center gap-1">
+            <button onclick="sendCheckIn('🏠 Safe')" class="bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-semibold">🏠 Safe</button>
+            <button onclick="sendCheckIn('🚗 Home')" class="bg-blue-600/20 border border-blue-500/40 text-blue-300 px-2 py-0.5 rounded text-[10px] font-semibold">🚗 Home</button>
+            <button onclick="sendCheckIn('⏰ Late')" class="bg-amber-600/20 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded text-[10px] font-semibold">⏰ Late</button>
+        </div>
+
+        <div class="flex items-center gap-1">
+            <button id="center-me" class="bg-pink-600/20 border border-pink-500/40 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold">🔴 Me</button>
+            <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2 py-1 rounded text-[11px] font-semibold">🟣 Ines <span id="partner-status" class="text-[9px] text-slate-400"></span></button>
+            <button id="toggle-mode" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Battery Mode">⚡ <span id="mode-label">Fast</span></button>
+            <button id="toggle-theme" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[11px] border border-slate-600">🌗</button>
         </div>
     </div>
 
-    <!-- Live Status Broadcast Banner -->
-    <div id="alert-banner" class="hidden bg-pink-600 text-white text-xs font-bold py-1.5 px-4 text-center z-30 shadow-lg animate-pulse">
-        📢 <span id="alert-text">Status update received</span>
+    <!-- Alert Banner -->
+    <div id="alert-banner" class="hidden bg-pink-600 text-white text-xs font-bold py-1 px-4 text-center z-30 animate-pulse">
+        📢 <span id="alert-text">Status update</span>
     </div>
 
-    <!-- Main Workspace Container -->
+    <!-- Workspace Container -->
     <div class="flex-1 flex relative overflow-hidden">
         <div id="map" class="flex-1 h-full z-10"></div>
 
-        <!-- Favorites Sidebar -->
-        <div id="sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 transition-all duration-300 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">⭐ Saved Favorites</h2>
-                <button id="close-sidebar" class="text-slate-400 hover:text-white text-sm font-bold px-2">&times;</button>
-            </div>
-            <div id="favorites-list" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs"></div>
+        <!-- Sidebars -->
+        <div id="sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">⭐ Favorites</h2><button id="close-sidebar" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
+            <div id="favorites-list" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs"></div>
         </div>
 
-        <!-- Calendar Sidebar -->
-        <div id="calendar-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 transition-all duration-300 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">📅 Trip Itinerary</h2>
-                <button id="close-calendar" class="text-slate-400 hover:text-white text-sm font-bold px-2">&times;</button>
-            </div>
-            <div class="p-3 border-b border-slate-700/60 bg-slate-900/40">
-                <button id="add-event-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-2 rounded-lg font-semibold text-xs transition">+ Add Event</button>
-            </div>
-            <div id="calendar-list" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs"></div>
+        <div id="calendar-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📅 Itinerary</h2><button id="close-calendar" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
+            <div class="p-3 border-b border-slate-700/60 bg-slate-900/40"><button id="add-event-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-1.5 rounded-lg font-semibold text-xs">+ Add Event</button></div>
+            <div id="calendar-list" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs"></div>
         </div>
 
-        <!-- Stats Sidebar -->
-        <div id="stats-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 transition-all duration-300 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">📊 Trip Statistics</h2>
-                <button id="close-stats" class="text-slate-400 hover:text-white text-sm font-bold px-2">&times;</button>
-            </div>
+        <div id="stats-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📊 Stats</h2><button id="close-stats" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div id="stats-content" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs"></div>
         </div>
     </div>
 
-    <!-- Floating Control Panel -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 backdrop-blur border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex flex-wrap items-center gap-2.5 justify-center">
-        <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl text-xs font-semibold transition shadow">📍 Meet Me</button>
-        <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition border border-slate-600">📌 Save Spot</button>
-        <button id="set-geofence" class="bg-teal-600 hover:bg-teal-500 text-white px-3 py-2 rounded-xl text-xs font-semibold transition">🛡️ Safe Zone</button>
-        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-rose-600/40 animate-pulse">🚨 SOS</button>
-        <div class="text-[11px] text-slate-400 flex flex-col border-l border-slate-700 pl-3">
-            <span>Speed: <strong id="speed-val" class="text-emerald-400">0 km/h</strong></span>
-            <span>Dist: <strong id="dist-val" class="text-slate-200">0.0 km</strong></span>
+    <!-- Compact Clean Horizontal Bottom Bar -->
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 backdrop-blur border border-slate-700 px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 max-w-[95vw] overflow-x-auto">
+        <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap shadow">📍 Meet</button>
+        <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
+        <button id="park-car-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap">🚗 Park</button>
+        <button id="set-geofence" class="bg-teal-600 hover:bg-teal-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap">🛡️ Zone</button>
+        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
+        <div class="text-[10px] text-slate-400 flex flex-col border-l border-slate-700 pl-2 whitespace-nowrap">
+            <span>Spd: <strong id="speed-val" class="text-emerald-400">0k/h</strong></span>
+            <span>Climb: <strong id="climb-val" class="text-sky-400">0m</strong></span>
         </div>
     </div>
 
@@ -147,9 +132,9 @@
         const breadcrumbPolyline = L.polyline([], { color: '#ec4899', weight: 4, opacity: 0.7 }).addTo(map);
 
         let myMarker = null, partnerMarker = null, meetBeaconMarker = null, geofenceCircle = null;
-        let watchID = null, isSharing = true;
-        let lastLat = null, lastLng = null, myLastLat = null, myLastLng = null, partnerLastLat = null, partnerLastLng = null;
-        let totalDistance = 0, topSpeed = 0, tripStartTime = new Date();
+        let watchID = null, isSharing = true, isBatterySaver = false;
+        let lastLat = null, lastLng = null, lastAltitude = null, myLastLat = null, myLastLng = null, partnerLastLat = null, partnerLastLng = null;
+        let totalDistance = 0, topSpeed = 0, elevationGain = 0, tripStartTime = new Date();
         
         let savedFavorites = JSON.parse(localStorage.getItem('spotmegk_favorites') || '[]');
         let savedCalendarEvents = JSON.parse(localStorage.getItem('spotmegk_calendar') || '[]');
@@ -158,29 +143,56 @@
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
         const saveSpotBtn = document.getElementById('save-spot');
+        const parkCarBtn = document.getElementById('park-car-btn');
         const setGeofenceBtn = document.getElementById('set-geofence');
         const meetHereBtn = document.getElementById('meet-here-btn');
         const sosBtn = document.getElementById('sos-btn');
         const centerMeBtn = document.getElementById('center-me');
         const centerPartnerBtn = document.getElementById('center-partner');
         const toggleThemeBtn = document.getElementById('toggle-theme');
+        const toggleModeBtn = document.getElementById('toggle-mode');
+        const modeLabel = document.getElementById('mode-label');
         
         const sidebar = document.getElementById('sidebar'), calendarSidebar = document.getElementById('calendar-sidebar'), statsSidebar = document.getElementById('stats-sidebar');
         const favoritesListEl = document.getElementById('favorites-list'), calendarListEl = document.getElementById('calendar-list'), statsContentEl = document.getElementById('stats-content');
         const favCountEl = document.getElementById('fav-count'), calCountEl = document.getElementById('cal-count');
-        const speedValEl = document.getElementById('speed-val'), distValEl = document.getElementById('dist-val'), partnerStatusEl = document.getElementById('partner-status');
+        const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
         const alertBanner = document.getElementById('alert-banner'), alertText = document.getElementById('alert-text'), weatherText = document.getElementById('weather-text');
 
         let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026';
         roomInput.value = currentRoom;
 
-        // Dark Theme Setup
+        // Audio Alert Tone Generator using Web Audio API
+        function playChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5 note
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5 note
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
         let isDarkMode = localStorage.getItem('spotmegk_darkmap') === 'true';
         if (isDarkMode) document.querySelector('.leaflet-tile-pane').classList.add('dark-tiles');
         toggleThemeBtn.addEventListener('click', () => {
             isDarkMode = !isDarkMode;
             localStorage.setItem('spotmegk_darkmap', isDarkMode);
             document.querySelector('.leaflet-tile-pane').classList.toggle('dark-tiles', isDarkMode);
+        });
+
+        // Battery / Performance Mode Toggle
+        toggleModeBtn.addEventListener('click', () => {
+            isBatterySaver = !isBatterySaver;
+            modeLabel.textContent = isBatterySaver ? "Eco" : "Fast";
+            navigator.geolocation.clearWatch(watchID);
+            startTracking();
+            alert(`Switched to ${isBatterySaver ? 'Battery Saver (15s)' : 'High Performance (3s)'} mode.`);
         });
 
         saveRoomBtn.addEventListener('click', () => {
@@ -192,7 +204,6 @@
             }
         });
 
-        // Sidebar Management
         document.getElementById('toggle-sidebar').addEventListener('click', () => { sidebar.classList.toggle('hidden'); calendarSidebar.classList.add('hidden'); statsSidebar.classList.add('hidden'); });
         document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('hidden'));
         document.getElementById('toggle-calendar').addEventListener('click', () => { calendarSidebar.classList.toggle('hidden'); sidebar.classList.add('hidden'); statsSidebar.classList.add('hidden'); });
@@ -208,7 +219,6 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        // Live Weather Widget Fetch
         async function fetchWeather(lat, lng) {
             try {
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m`);
@@ -217,23 +227,25 @@
             } catch(e) { weatherText.textContent = "Weather unavailable"; }
         }
 
-        // Check-In Alerts
         window.sendCheckIn = function(statusMsg) {
             if(!currentRoom) return;
             localStorage.setItem(`tracker_${currentRoom}_alert`, JSON.stringify({ msg: statusMsg, time: new Date().toISOString() }));
-            alert("Broadcasted status to Ines: " + statusMsg);
+            playChime();
+            alert("Broadcasted: " + statusMsg);
         }
 
+        let lastCheckedAlertTime = null;
         setInterval(() => {
             if(!currentRoom) return;
             let alertData = localStorage.getItem(`tracker_${currentRoom}_alert`);
             if(alertData) {
                 const parsed = JSON.parse(alertData);
-                const age = (new Date() - new Date(parsed.time)) / 1000;
-                if(age < 15) {
+                if(parsed.time !== lastCheckedAlertTime && (new Date() - new Date(parsed.time)) / 1000 < 15) {
+                    lastCheckedAlertTime = parsed.time;
                     alertText.textContent = `Ines status: ${parsed.msg}`;
                     alertBanner.classList.remove('hidden');
-                } else {
+                    playChime();
+                } else if((new Date() - new Date(parsed.time)) / 1000 >= 15) {
                     alertBanner.classList.add('hidden');
                 }
             }
@@ -287,19 +299,48 @@
             }
         }
 
-        centerMeBtn.addEventListener('click', () => { if (myLastLat) map.setView([myLastLat, myLastLng], 16); else alert("Acquiring GPS fix..."); });
+        centerMeBtn.addEventListener('click', () => {
+            if (myLastLat !== null && myLastLng !== null) {
+                map.setView([myLastLat, myLastLng], 16);
+            } else {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        myLastLat = pos.coords.latitude;
+                        myLastLng = pos.coords.longitude;
+                        map.setView([myLastLat, myLastLng], 16);
+                        if (!myMarker) {
+                            myMarker = L.marker([myLastLat, myLastLng], { icon: garyIconStyle }).addTo(map).bindPopup("You");
+                        } else {
+                            myMarker.setLatLng([myLastLat, myLastLng]);
+                        }
+                    },
+                    (err) => alert("GPS Fix Failed"),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            }
+        });
+
         centerPartnerBtn.addEventListener('click', () => { if (partnerLastLat) map.setView([partnerLastLat, partnerLastLng], 16); else alert("Waiting for Ines..."); });
 
-        // Geofencing Safe Zone
+        // Dedicated "Park Car" Shortcut Button
+        parkCarBtn.addEventListener('click', () => {
+            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
+            const parkSpot = { name: "🚗 Parked Car", lat: myLastLat, lng: myLastLng };
+            savedFavorites.unshift(parkSpot); // Place at top of list
+            localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites));
+            renderFavorites();
+            alert("Parking spot saved to favorites!");
+        });
+
         setGeofenceBtn.addEventListener('click', () => {
-            if (!myLastLat) { alert("Wait for GPS fix"); return; }
-            const zoneName = prompt("Name this Safe Zone (e.g., 'Home'):", "Home");
+            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
+            const zoneName = prompt("Name this Safe Zone:", "Home");
             if (zoneName) {
                 safeZone = { name: zoneName, lat: myLastLat, lng: myLastLng, radius: 200 };
                 localStorage.setItem('spotmegk_safezone', JSON.stringify(safeZone));
                 if(geofenceCircle) map.removeLayer(geofenceCircle);
                 geofenceCircle = L.circle([myLastLat, myLastLng], { radius: 200, color: '#14b8a6', fillColor: '#14b8a6', fillOpacity: 0.2 }).addTo(map);
-                alert(`Safe Zone '${zoneName}' set (200m radius)!`);
+                alert(`Safe Zone '${zoneName}' set!`);
             }
         });
 
@@ -309,30 +350,29 @@
 
         meetHereBtn.addEventListener('click', () => {
             if (meetBeaconMarker) { map.removeLayer(meetBeaconMarker); meetBeaconMarker = null; alert("Beacon removed."); return; }
-            if (!myLastLat) return;
+            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
             meetBeaconMarker = L.marker([myLastLat, myLastLng], {
                 icon: L.divIcon({ className: 'custom-div-icon', html: `<div class="beacon-pulse" style='background-color:#6366f1; width:34px; height:34px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow: 0 0 15px #6366f1;'>📍</div>`, iconSize: [34, 34], iconAnchor: [17, 17] })
             }).addTo(map).bindPopup("<b>Beacon: Meet Here!</b>").openPopup();
         });
 
         sosBtn.addEventListener('click', () => {
-            if (!myLastLat) return;
+            if (!myLastLat) { alert("Acquiring GPS fix for SOS..."); return; }
             window.location.href = `sms:${targetSOSNumber}?body=${encodeURIComponent(`🚨 SOS! Location: https://www.google.com/maps?q=${myLastLat},${myLastLng}`)}`;
         });
 
-        // Stats Calculator
         function updateStats() {
             const elapsedHours = (new Date() - tripStartTime) / 3600000;
             const avgSpeed = elapsedHours > 0 ? (totalDistance / 1000) / elapsedHours : 0;
             statsContentEl.innerHTML = `
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Total Distance:</b> ${(totalDistance/1000).toFixed(2)} km</div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Elevation Gain:</b> ${Math.round(elevationGain)} meters</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Top Speed:</b> ${topSpeed} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Average Speed:</b> ${avgSpeed.toFixed(1)} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Active Time:</b> ${Math.round((new Date() - tripStartTime)/60000)} mins</div>
             `;
         }
 
-        // Favorites & Calendar management
         function renderFavorites() {
             favCountEl.textContent = savedFavorites.length;
             favoritesListEl.innerHTML = savedFavorites.length === 0 ? `<div class="text-slate-500 text-center py-8">No favorites yet</div>` : '';
@@ -343,7 +383,7 @@
         window.deleteFavorite = (i) => { savedFavorites.splice(i,1); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
 
         saveSpotBtn.addEventListener('click', () => {
-            if (!myLastLat) return;
+            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
             const name = prompt("Name this spot:", "Spot");
             if (name) { savedFavorites.push({ name, lat: myLastLat, lng: myLastLng }); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
         });
@@ -365,21 +405,46 @@
 
         function startTracking() {
             if (!navigator.geolocation) return;
+            const options = {
+                enableHighAccuracy: true,
+                maximumAge: isBatterySaver ? 15000 : 5000,
+                timeout: 10000
+            };
             watchID = navigator.geolocation.watchPosition((pos) => {
                 if (!isSharing) return;
                 const lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Math.round(pos.coords.accuracy);
+                const currentAlt = pos.coords.altitude;
                 myLastLat = lat; myLastLng = lng;
                 
                 breadcrumbCoordinates.push([lat, lng]);
                 breadcrumbPolyline.setLatLngs(breadcrumbCoordinates);
+
+                if (currentAlt !== null && lastAltitude !== null) {
+                    const altDiff = currentAlt - lastAltitude;
+                    if (altDiff > 0 && altDiff < 10) { // Filter out minor GPS altitude jitter
+                        elevationGain += altDiff;
+                    }
+                }
+                if (currentAlt !== null) lastAltitude = currentAlt;
 
                 let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
                 if(speedKmh > topSpeed) topSpeed = speedKmh;
                 if(lastLat && lastLng) totalDistance += calculateDistance(lastLat, lastLng, lat, lng);
                 lastLat = lat; lastLng = lng;
 
-                speedValEl.textContent = `${speedKmh} km/h`;
-                distValEl.textContent = `${(totalDistance/1000).toFixed(2)} km`;
+                speedValEl.textContent = `${speedKmh}k/h`;
+                climbValEl.textContent = `${Math.round(elevationGain)}m`;
+
+                // Safe zone proximity check
+                if (safeZone) {
+                    const distToSafeZone = calculateDistance(lat, lng, safeZone.lat, safeZone.lng);
+                    if (distToSafeZone <= safeZone.radius && (!window.wasInSafeZone)) {
+                        window.wasInSafeZone = true;
+                        sendCheckIn(`Arrived safely at ${safeZone.name}!`);
+                    } else if (distToSafeZone > safeZone.radius + 50) {
+                        window.wasInSafeZone = false;
+                    }
+                }
 
                 if (!myMarker) {
                     myMarker = L.marker([lat, lng], { icon: garyIconStyle }).addTo(map).bindPopup("You");
@@ -389,7 +454,9 @@
                     myMarker.setLatLng([lat, lng]);
                 }
                 syncLocationData(lat, lng, acc, speedKmh);
-            }, null, { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+            }, (err) => {
+                console.log("Waiting for GPS signal...");
+            }, options);
         }
         startTracking();
     </script>
