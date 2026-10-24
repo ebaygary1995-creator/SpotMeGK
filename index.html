@@ -46,9 +46,10 @@
         </div>
 
         <div class="flex items-center gap-1">
+            <button onclick="openTapoApp()" class="bg-amber-600/25 hover:bg-amber-600/40 text-amber-300 px-2 py-1 rounded text-[11px] font-semibold border border-amber-500/40" title="Open Tapo Camera App">📷 Tapo</button>
+            <button id="toggle-chat" class="bg-pink-600/30 hover:bg-pink-600/40 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold border border-pink-500/40">💬 Chat</button>
             <button id="toggle-weather-hub" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">🌤️ Weather</button>
             <button id="toggle-stats" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📊 Stats</button>
-            <button id="toggle-calendar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📅 Cal</button>
             <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">⭐ Favs (<span id="fav-count">0</span>)</button>
         </div>
     </header>
@@ -56,7 +57,7 @@
     <!-- Configuration & Quick Status Bar -->
     <div class="bg-slate-800/90 p-2 border-b border-slate-700 flex flex-wrap gap-2 items-center justify-between text-xs z-30 shadow-md">
         <div class="flex items-center gap-1.5">
-            <input type="text" id="room-input" placeholder="Room Code" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-24">
+            <input type="text" id="room-input" placeholder="Room-PIN (e.g. room-1234)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-36">
             <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[11px] font-medium">Save</button>
         </div>
         
@@ -91,20 +92,14 @@
             <div id="favorites-list" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs"></div>
         </div>
 
-        <div id="calendar-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📅 Itinerary</h2><button id="close-calendar" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
-            <div class="p-3 border-b border-slate-700/60 bg-slate-900/40"><button id="add-event-btn" class="w-full bg-pink-600 hover:bg-pink-500 text-white py-1.5 rounded-lg font-semibold text-xs">+ Add Event</button></div>
-            <div id="calendar-list" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs"></div>
-        </div>
-
         <div id="stats-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📊 Stats</h2><button id="close-stats" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📊 Stats & Backup</h2><button id="close-stats" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div id="stats-content" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs"></div>
         </div>
 
         <div id="weather-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">🌤️ Weather & Warnings Hub</h2>
+                <h2 class="font-bold text-sm text-slate-200">🌤️ Weather & News Hub</h2>
                 <button id="close-weather" class="text-slate-400 text-sm font-bold px-2">&times;</button>
             </div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
@@ -113,16 +108,31 @@
                     <div id="hub-weather-desc" class="text-slate-300">Acquiring local meteorological data...</div>
                 </div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                    <div class="font-bold text-slate-200">🇮🇪 Met Éireann Official Links</div>
+                    <div class="font-bold text-slate-200">🇮🇪 Met Éireann & News Links</div>
                     <a href="https://www.met.ie/warnings" target="_blank" class="block bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-semibold transition">⚠️ Live Weather Warnings</a>
                     <a href="https://www.met.ie/forecasts/leinster" target="_blank" class="block bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded text-center border border-slate-600 transition">☁️ Leinster Regional Forecast</a>
-                    <a href="https://www.met.ie/radar" target="_blank" class="block bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded text-center border border-slate-600 transition">🌧️ National Rainfall Radar</a>
+                    <a href="https://www.rte.ie/news/" target="_blank" class="block bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-center font-semibold transition">📰 RTÉ News</a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Chat Sidebar -->
+        <div id="chat-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200">💬 Live Couple Chat</h2>
+                <button id="close-chat" class="text-slate-400 text-sm font-bold px-2">&times;</button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs flex flex-col">
+                <div class="text-slate-500 text-center py-4">No messages yet. Say hello!</div>
+            </div>
+            <div class="p-3 border-t border-slate-700 bg-slate-900 flex gap-2">
+                <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-pink-500">
+                <button id="send-chat" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 rounded text-xs font-semibold">Send</button>
             </div>
         </div>
     </div>
 
-    <!-- Compact Clean Horizontal Bottom Bar -->
+    <!-- Bottom Bar -->
     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 backdrop-blur border border-slate-700 px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 max-w-[95vw] overflow-x-auto">
         <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap shadow">📍 Meet</button>
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
@@ -145,6 +155,8 @@
         const targetSOSNumber = IS_INES_PHONE ? GARY_PHONE : INES_PHONE;
         const myRoleKey = IS_INES_PHONE ? 'ines' : 'gary';
         const partnerRoleKey = IS_INES_PHONE ? 'gary' : 'ines';
+        const myName = IS_INES_PHONE ? 'Ines' : 'Gary';
+        const partnerName = IS_INES_PHONE ? 'Gary' : 'Ines';
 
         const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
         const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
@@ -161,8 +173,8 @@
         let totalDistance = 0, topSpeed = 0, elevationGain = 0, tripStartTime = new Date();
         
         let savedFavorites = JSON.parse(localStorage.getItem('spotmegk_favorites') || '[]');
-        let savedCalendarEvents = JSON.parse(localStorage.getItem('spotmegk_calendar') || '[]');
         let safeZone = JSON.parse(localStorage.getItem('spotmegk_safezone') || 'null');
+        let chatHistory = JSON.parse(localStorage.getItem('spotmegk_chat') || '[]');
 
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
@@ -179,14 +191,44 @@
         const toggleFollowBtn = document.getElementById('toggle-follow');
         const followLabel = document.getElementById('follow-label');
         
-        const sidebar = document.getElementById('sidebar'), calendarSidebar = document.getElementById('calendar-sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar');
-        const favoritesListEl = document.getElementById('favorites-list'), calendarListEl = document.getElementById('calendar-list'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc');
-        const favCountEl = document.getElementById('fav-count'), calCountEl = document.getElementById('cal-count');
+        const sidebar = document.getElementById('sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar');
+        const favoritesListEl = document.getElementById('favorites-list'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc'), chatMessagesEl = document.getElementById('chat-messages'), chatInputEl = document.getElementById('chat-input'), sendChatBtn = document.getElementById('send-chat');
+        const favCountEl = document.getElementById('fav-count');
         const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
         const alertBanner = document.getElementById('alert-banner'), alertText = document.getElementById('alert-text'), weatherText = document.getElementById('weather-text');
 
-        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026';
+        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-7788';
         roomInput.value = currentRoom;
+
+        function encryptData(text, secretKey) {
+            return btoa(unescape(encodeURIComponent(text + "::" + secretKey)));
+        }
+
+        function decryptData(encoded, secretKey) {
+            try {
+                const decoded = decodeURIComponent(escape(atob(encoded)));
+                const parts = decoded.split("::");
+                if (parts[1] === secretKey) return parts[0];
+            } catch(e) {}
+            return null;
+        }
+
+        window.openTapoApp = function() {
+            window.location.href = "tapo://";
+            setTimeout(() => { window.open("https://www.tapo.com/", "_blank"); }, 500);
+        }
+
+        window.exportDataToDrive = function() {
+            const backupData = { favorites: savedFavorites, safeZone: safeZone, chat: chatHistory, exportDate: new Date().toISOString() };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `SpotMeGK_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            alert("Backup generated! Select 'Save to Google Drive' when prompted.");
+        }
 
         function playChime() {
             try {
@@ -211,44 +253,75 @@
             document.querySelector('.leaflet-tile-pane').classList.toggle('dark-tiles', isDarkMode);
         });
 
-        toggleModeBtn.addEventListener('click', () => {
-            isBatterySaver = !isBatterySaver;
-            modeLabel.textContent = isBatterySaver ? "Eco" : "Fast";
-            navigator.geolocation.clearWatch(watchID);
-            startTracking();
-        });
-
-        toggleFollowBtn.addEventListener('click', () => {
-            isAutoFollow = !isAutoFollow;
-            followLabel.textContent = isAutoFollow ? "On" : "Off";
-            toggleFollowBtn.classList.toggle('bg-purple-600/40', isAutoFollow);
-            alert(`Auto-Follow Partner: ${isAutoFollow ? 'Enabled' : 'Disabled'}`);
-        });
-
         saveRoomBtn.addEventListener('click', () => {
             if(roomInput.value.trim()) {
                 currentRoom = roomInput.value.trim();
                 localStorage.setItem('spotmegk_room', currentRoom);
-                alert('Room updated: ' + currentRoom);
+                alert('Secure Room updated: ' + currentRoom);
                 window.location.reload();
             }
         });
 
         function closeAllSidebars() {
             sidebar.classList.add('hidden');
-            calendarSidebar.classList.add('hidden');
             statsSidebar.classList.add('hidden');
             weatherSidebar.classList.add('hidden');
+            chatSidebar.classList.add('hidden');
         }
 
         document.getElementById('toggle-sidebar').addEventListener('click', () => { closeAllSidebars(); sidebar.classList.toggle('hidden'); });
         document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('hidden'));
-        document.getElementById('toggle-calendar').addEventListener('click', () => { closeAllSidebars(); calendarSidebar.classList.toggle('hidden'); });
-        document.getElementById('close-calendar').addEventListener('click', () => calendarSidebar.classList.add('hidden'));
         document.getElementById('toggle-stats').addEventListener('click', () => { closeAllSidebars(); statsSidebar.classList.toggle('hidden'); updateStats(); });
         document.getElementById('close-stats').addEventListener('click', () => statsSidebar.classList.add('hidden'));
         document.getElementById('toggle-weather-hub').addEventListener('click', () => { closeAllSidebars(); weatherSidebar.classList.toggle('hidden'); });
         document.getElementById('close-weather').addEventListener('click', () => weatherSidebar.classList.add('hidden'));
+        document.getElementById('toggle-chat').addEventListener('click', () => { closeAllSidebars(); chatSidebar.classList.toggle('hidden'); renderChat(); });
+        document.getElementById('close-chat').addEventListener('click', () => chatSidebar.classList.add('hidden'));
+
+        // Chat Logic
+        function renderChat() {
+            chatMessagesEl.innerHTML = chatHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No messages yet. Say hello!</div>` : '';
+            chatHistory.forEach(msg => {
+                const isMe = msg.sender === myName;
+                chatMessagesEl.innerHTML += `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2">
+                        <span class="text-[9px] text-slate-400 mb-0.5">${msg.sender} • ${new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <div class="p-2 rounded-xl text-xs max-w-[85%] ${isMe ? 'bg-pink-600 text-white rounded-br-none' : 'bg-slate-700 text-slate-200 rounded-bl-none'}">${msg.text}</div>
+                    </div>
+                `;
+            });
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+
+        sendChatBtn.addEventListener('click', () => {
+            const text = chatInputEl.value.trim();
+            if(!text || !currentRoom) return;
+            const secretPin = currentRoom.split('-').pop();
+            
+            const newMsg = { sender: myName, text, time: new Date().toISOString() };
+            chatHistory.push(newMsg);
+            localStorage.setItem(`tracker_${currentRoom}_chat`, encryptData(JSON.stringify(chatHistory), secretPin));
+            chatInputEl.value = '';
+            renderChat();
+        });
+
+        // Poll for chat updates
+        setInterval(() => {
+            if(!currentRoom) return;
+            let rawChat = localStorage.getItem(`tracker_${currentRoom}_chat`);
+            if(rawChat) {
+                const secretPin = currentRoom.split('-').pop();
+                const decryptedStr = decryptData(rawChat, secretPin);
+                if(decryptedStr) {
+                    const parsedChat = JSON.parse(decryptedStr);
+                    if(parsedChat.length !== chatHistory.length) {
+                        if(parsedChat.length > chatHistory.length) playChime();
+                        chatHistory = parsedChat;
+                        if(!chatSidebar.classList.contains('hidden')) renderChat();
+                    }
+                }
+            }
+        }, 2000);
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371e3; 
@@ -266,7 +339,7 @@
                 const temp = Math.round(data.current.temperature_2m);
                 const wind = Math.round(data.current.wind_speed_10m);
                 weatherText.textContent = `${temp}°C • Wind: ${wind} km/h`;
-                hubWeatherDesc.innerHTML = `Current Temperature: <b>${temp}°C</b><br>Wind Speed: <b>${wind} km/h</b><br><span class="text-slate-400">Calibrated for your current position in Ireland.</span>`;
+                hubWeatherDesc.innerHTML = `Current Temperature: <b>${temp}°C</b><br>Wind Speed: <b>${wind} km/h</b><br><span class="text-slate-400">Calibrated for County Kildare.</span>`;
             } catch(e) { 
                 weatherText.textContent = "Weather offline"; 
                 hubWeatherDesc.textContent = "Unable to fetch live meteorological data.";
@@ -275,7 +348,9 @@
 
         window.sendCheckIn = function(statusMsg) {
             if(!currentRoom) return;
-            localStorage.setItem(`tracker_${currentRoom}_alert`, JSON.stringify({ msg: statusMsg, time: new Date().toISOString() }));
+            const secretPin = currentRoom.split('-').pop();
+            const encryptedAlert = encryptData(statusMsg, secretPin);
+            localStorage.setItem(`tracker_${currentRoom}_alert`, encryptedAlert);
             playChime();
             alert("Broadcasted: " + statusMsg);
         }
@@ -283,16 +358,15 @@
         let lastCheckedAlertTime = null;
         setInterval(() => {
             if(!currentRoom) return;
-            let alertData = localStorage.getItem(`tracker_${currentRoom}_alert`);
-            if(alertData) {
-                const parsed = JSON.parse(alertData);
-                if(parsed.time !== lastCheckedAlertTime && (new Date() - new Date(parsed.time)) / 1000 < 15) {
-                    lastCheckedAlertTime = parsed.time;
-                    alertText.textContent = `Partner status: ${parsed.msg}`;
+            let rawAlert = localStorage.getItem(`tracker_${currentRoom}_alert`);
+            if(rawAlert) {
+                const secretPin = currentRoom.split('-').pop();
+                const decryptedJson = decryptData(rawAlert, secretPin);
+                if(decryptedJson && decryptedJson !== lastCheckedAlertTime) {
+                    lastCheckedAlertTime = decryptedJson;
+                    alertText.textContent = `${partnerName} status: ${decryptedJson}`;
                     alertBanner.classList.remove('hidden');
                     playChime();
-                } else if((new Date() - new Date(parsed.time)) / 1000 >= 15) {
-                    alertBanner.classList.add('hidden');
                 }
             }
         }, 3000);
@@ -305,33 +379,41 @@
         async function syncLocationData(lat, lng, accuracy, speed) {
             if (!currentRoom) return;
             try {
-                const payload = { lat, lng, accuracy, speed, battery: deviceBatteryPct, time: new Date().toISOString() };
-                localStorage.setItem(`tracker_${currentRoom}_${myRoleKey}`, JSON.stringify(payload));
+                const secretPin = currentRoom.split('-').pop();
+                const payload = JSON.stringify({ lat, lng, accuracy, speed, battery: deviceBatteryPct, time: new Date().toISOString() });
+                localStorage.setItem(`tracker_${currentRoom}_${myRoleKey}`, encryptData(payload, secretPin));
                 
-                let partnerData = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
-                if(partnerData) {
-                    const parsed = JSON.parse(partnerData);
-                    partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
-                    updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
+                let rawPartner = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
+                if(rawPartner) {
+                    const decryptedPartnerStr = decryptData(rawPartner, secretPin);
+                    if(decryptedPartnerStr) {
+                        const parsed = JSON.parse(decryptedPartnerStr);
+                        partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
+                        updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
+                    }
                 }
             } catch (err) {}
         }
 
         setInterval(() => {
             if (!currentRoom) return;
-            let partnerData = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
-            if (partnerData) {
-                const parsed = JSON.parse(partnerData);
-                partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
-                updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
-                if (isAutoFollow && partnerLastLat && partnerLastLng) {
-                    map.setView([partnerLastLat, partnerLastLng], map.getZoom());
+            let rawPartner = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
+            if (rawPartner) {
+                const secretPin = currentRoom.split('-').pop();
+                const decryptedPartnerStr = decryptData(rawPartner, secretPin);
+                if(decryptedPartnerStr) {
+                    const parsed = JSON.parse(decryptedPartnerStr);
+                    partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
+                    updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
+                    if (isAutoFollow && partnerLastLat && partnerLastLng) {
+                        map.setView([partnerLastLat, partnerLastLng], map.getZoom());
+                    }
                 }
             }
         }, 2000);
 
         function getMarkerIcon(speed) {
-            const iconUrl = speed > 30 ? 'https://cdn-icons-png.flaticon.com/512/741/741407.png' : myImageUrl; // Car/Vehicle badge if > 30 km/h
+            const iconUrl = speed > 30 ? 'https://cdn-icons-png.flaticon.com/512/741/741407.png' : myImageUrl;
             return L.icon({ iconUrl: iconUrl, iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -44], className: 'custom-profile-marker' });
         }
 
@@ -343,7 +425,6 @@
             const batteryText = battery != null ? ` • 🔋 ${battery}%` : '';
             partnerStatusEl.textContent = `(${timeText}${batteryText})`;
 
-            const partnerName = IS_INES_PHONE ? "Gary" : "Ines";
             const popupContent = `
                 <div style="text-align:center; padding:4px;">
                     <b>${partnerName}'s Location</b><br>
@@ -430,7 +511,8 @@
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Top Speed:</b> ${topSpeed} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Average Speed:</b> ${avgSpeed.toFixed(1)} km/h</div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Active Time:</b> ${Math.round((new Date() - tripStartTime)/60000)} mins</div>
-                <button onclick="if(myLastLat){navigator.clipboard.writeText(myLastLat+', '+myLastLng);alert('My coordinates copied!');}" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg border border-slate-600 font-semibold mt-2">📋 Copy My Coordinates</button>
+                <button onclick="exportDataToDrive()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-semibold mt-2">💾 Backup to Google Drive</button>
+                <button onclick="if(myLastLat){navigator.clipboard.writeText(myLastLat+', '+myLastLng);alert('My coordinates copied!');}" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg border border-slate-600 font-semibold mt-1">📋 Copy My Coordinates</button>
             `;
         }
 
@@ -449,20 +531,7 @@
             if (name) { savedFavorites.push({ name, lat: myLastLat, lng: myLastLng }); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
         });
 
-        function renderCalendar() {
-            calCountEl.textContent = savedCalendarEvents.length;
-            calendarListEl.innerHTML = savedCalendarEvents.length === 0 ? `<div class="text-slate-500 text-center py-8">No events</div>` : '';
-            savedCalendarEvents.forEach((ev, i) => {
-                calendarListEl.innerHTML += `<div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-1"><div class="flex justify-between"><b class="text-pink-400">${ev.date}</b><button onclick="deleteEvent(${i})" class="text-rose-400">Del</button></div><div>${ev.title}</div></div>`;
-            });
-        }
-        window.deleteEvent = (i) => { savedCalendarEvents.splice(i,1); localStorage.setItem('spotmegk_calendar', JSON.stringify(savedCalendarEvents)); renderCalendar(); }
-        document.getElementById('add-event-btn').addEventListener('click', () => {
-            const title = prompt("Event title:"); const date = prompt("Date (YYYY-MM-DD):");
-            if(title && date) { savedCalendarEvents.push({title, date}); localStorage.setItem('spotmegk_calendar', JSON.stringify(savedCalendarEvents)); renderCalendar(); }
-        });
-
-        renderFavorites(); renderCalendar();
+        renderFavorites();
 
         function startTracking() {
             if (!navigator.geolocation) return;
@@ -512,7 +581,7 @@
                     fetchWeather(lat, lng);
                 } else {
                     myMarker.setLatLng([lat, lng]);
-                    myMarker.setIcon(getMarkerIcon(speedKmh)); // Dynamically update marker based on speed (>30km/h = driving icon)
+                    myMarker.setIcon(getMarkerIcon(speedKmh));
                 }
                 syncLocationData(lat, lng, acc, speedKmh);
             }, (err) => {
