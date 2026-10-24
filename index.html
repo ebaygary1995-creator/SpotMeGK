@@ -47,6 +47,7 @@
 
         <div class="flex items-center gap-1">
             <button id="toggle-workouts" class="bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 px-2 py-1 rounded text-[11px] font-semibold border border-emerald-500/40">🏃 Workouts</button>
+            <button id="toggle-weight" class="bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-300 px-2 py-1 rounded text-[11px] font-semibold border border-cyan-500/40">⚖️ Weight</button>
             <button id="toggle-chat" class="bg-pink-600/30 hover:bg-pink-600/40 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold border border-pink-500/40">💬 Chat</button>
             <button id="toggle-weather-hub" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">🌤️ Weather</button>
             <button id="toggle-stats" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📊 Stats</button>
@@ -130,6 +131,55 @@
             </div>
         </div>
 
+        <!-- Weight Tracking & Pedometer Sidebar -->
+        <div id="weight-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200">⚖️ Weight Tracker & Steps</h2>
+                <button id="close-weight" class="text-slate-400 text-sm font-bold px-2">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+                <!-- Pedometer Leaderboard -->
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="font-bold text-amber-400 flex justify-between items-center">
+                        <span>🏆 Pedometer Leaderboard</span>
+                        <span class="text-[10px] text-slate-400">Today</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between bg-slate-800 p-2 rounded border border-slate-700 items-center">
+                            <span>👤 Gary</span>
+                            <strong id="gary-steps-val" class="text-emerald-400">0 steps</strong>
+                        </div>
+                        <div class="flex justify-between bg-slate-800 p-2 rounded border border-slate-700 items-center">
+                            <span>👤 Ines</span>
+                            <strong id="ines-steps-val" class="text-purple-400">0 steps</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weight Logger -->
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="font-bold text-cyan-400">Log Weight Entry</div>
+                    <div class="flex gap-2">
+                        <select id="weight-user" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1">
+                            <option value="gary">Gary</option>
+                            <option value="ines">Ines</option>
+                        </select>
+                        <input type="number" step="0.1" id="weight-input" placeholder="kg (e.g. 75.5)" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1">
+                    </div>
+                    <button id="save-weight-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1.5 rounded font-bold">Save Weight</button>
+                </div>
+
+                <!-- Weight History Tabs & Lists -->
+                <div class="flex border-b border-slate-700">
+                    <button id="tab-gary-weight" class="flex-1 py-1.5 font-bold text-cyan-400 border-b-2 border-cyan-500 text-center">Gary's Weight</button>
+                    <button id="tab-ines-weight" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines's Weight</button>
+                </div>
+                <div id="weight-history-list" class="space-y-1.5 pt-1">
+                    <div class="text-slate-500 text-center py-4">No weight records yet</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Workout Hub Sidebar -->
         <div id="workout-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
@@ -171,7 +221,8 @@
                     </div>
                 </div>
 
-                <button onclick="exportWorkoutsToSheets()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold mt-2">📊 Export to Google Sheets (CSV)</button>
+                <button onclick="exportReadableReport()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg font-semibold mt-2">📄 Export Readable Report</button>
+                <button onclick="exportWorkoutsToSheets()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold mt-1">📊 Export to Google Sheets (CSV)</button>
             </div>
         </div>
     </div>
@@ -203,7 +254,7 @@
         const partnerName = IS_INES_PHONE ? 'Gary' : 'Ines';
 
         let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-1995';
-        const currentPin = '1995'; // Fixed secure pin key
+        const currentPin = '1995';
 
         const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
         const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
@@ -227,6 +278,15 @@
         let inesWorkouts = JSON.parse(localStorage.getItem('spotmegk_workouts_ines') || '[]');
         let activeWorkoutTab = 'gary';
 
+        let garyWeights = JSON.parse(localStorage.getItem('spotmegk_weights_gary') || '[]');
+        let inesWeights = JSON.parse(localStorage.getItem('spotmegk_weights_ines') || '[]');
+        let activeWeightTab = 'gary';
+
+        let dailySteps = JSON.parse(localStorage.getItem('spotmegk_steps') || JSON.stringify({ gary: 0, ines: 0, date: new Date().toLocaleDateString() }));
+        if (dailySteps.date !== new Date().toLocaleDateString()) {
+            dailySteps = { gary: 0, ines: 0, date: new Date().toLocaleDateString() };
+        }
+
         let isWorkoutActive = false, isWorkoutPaused = false;
         let activeWorkoutType = 'Cycle', workoutSeconds = 0, workoutDist = 0, workoutClimb = 0, workoutTimer = null;
 
@@ -245,7 +305,7 @@
         const toggleFollowBtn = document.getElementById('toggle-follow');
         const followLabel = document.getElementById('follow-label');
         
-        const sidebar = document.getElementById('sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar'), workoutSidebar = document.getElementById('workout-sidebar');
+        const sidebar = document.getElementById('sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar'), workoutSidebar = document.getElementById('workout-sidebar'), weightSidebar = document.getElementById('weight-sidebar');
         const favoritesListEl = document.getElementById('favorites-list'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc'), chatMessagesEl = document.getElementById('chat-messages'), chatInputEl = document.getElementById('chat-input'), sendChatBtn = document.getElementById('send-chat');
         const favCountEl = document.getElementById('fav-count');
         const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
@@ -272,7 +332,7 @@
 
         window.exportDataToDrive = function() {
             hapticFeedback();
-            const backupData = { favorites: savedFavorites, safeZone: safeZone, chat: chatHistory, garyWorkouts, inesWorkouts, exportDate: new Date().toISOString() };
+            const backupData = { favorites: savedFavorites, safeZone, chat: chatHistory, garyWorkouts, inesWorkouts, garyWeights, inesWeights, exportDate: new Date().toISOString() };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -281,6 +341,31 @@
             downloadAnchor.click();
             downloadAnchor.remove();
             alert("Backup generated!");
+        }
+
+        // Readable HTML Report Export
+        window.exportReadableReport = function() {
+            hapticFeedback();
+            const workouts = activeWorkoutTab === 'gary' ? garyWorkouts : inesWorkouts;
+            const ownerName = activeWorkoutTab === 'gary' ? 'Gary' : 'Ines';
+            
+            let htmlContent = `<!DOCTYPE html><html><head><title>SpotMeGK Report - ${ownerName}</title><style>body{font-family:sans-serif;padding:20px;background:#0f172a;color:#f8fafc;}h1{color:#ec4899;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #334155;padding:10px;text-align:left;}th{background:#1e293b;}</style></head><body>`;
+            htmlContent += `<h1>SpotMeGK Workout Report: ${ownerName}</h1><p>Generated on ${new Date().toLocaleString()}</p>`;
+            htmlContent += `<table><tr><th>Activity</th><th>Date</th><th>Duration</th><th>Distance</th><th>Climb</th><th>Avg Speed</th></tr>`;
+            workouts.forEach(w => {
+                htmlContent += `<tr><td>${w.type}</td><td>${w.date}</td><td>${w.duration}</td><td>${w.distance} km</td><td>${w.climb} m</td><td>${w.avgSpeed} km/h</td></tr>`;
+            });
+            htmlContent += `</table></body></html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SpotMeGK_Report_${ownerName}.html`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            alert("Readable report generated and downloaded!");
         }
 
         window.exportWorkoutsToSheets = function() {
@@ -340,6 +425,7 @@
             weatherSidebar.classList.add('hidden');
             chatSidebar.classList.add('hidden');
             workoutSidebar.classList.add('hidden');
+            weightSidebar.classList.add('hidden');
         }
 
         document.getElementById('toggle-sidebar').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); sidebar.classList.toggle('hidden'); renderFavorites(); });
@@ -352,6 +438,74 @@
         document.getElementById('close-chat').addEventListener('click', () => chatSidebar.classList.add('hidden'));
         document.getElementById('toggle-workouts').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); workoutSidebar.classList.toggle('hidden'); renderWorkouts(); });
         document.getElementById('close-workout').addEventListener('click', () => workoutSidebar.classList.add('hidden'));
+        document.getElementById('toggle-weight').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weightSidebar.classList.toggle('hidden'); renderWeightTracker(); });
+        document.getElementById('close-weight').addEventListener('click', () => weightSidebar.classList.add('hidden'));
+
+        // Weight Tracking & Pedometer Logic
+        document.getElementById('tab-gary-weight').addEventListener('click', () => {
+            hapticFeedback();
+            activeWeightTab = 'gary';
+            document.getElementById('tab-gary-weight').className = "flex-1 py-1.5 font-bold text-cyan-400 border-b-2 border-cyan-500 text-center";
+            document.getElementById('tab-ines-weight').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
+            renderWeightTracker();
+        });
+
+        document.getElementById('tab-ines-weight').addEventListener('click', () => {
+            hapticFeedback();
+            activeWeightTab = 'ines';
+            document.getElementById('tab-ines-weight').className = "flex-1 py-1.5 font-bold text-purple-400 border-b-2 border-purple-500 text-center";
+            document.getElementById('tab-gary-weight').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
+            renderWeightTracker();
+        });
+
+        document.getElementById('save-weight-btn').addEventListener('click', () => {
+            hapticFeedback();
+            const user = document.getElementById('weight-user').value;
+            const val = parseFloat(document.getElementById('weight-input').value);
+            if(!val || isNaN(val)) { alert("Please enter a valid weight!"); return; }
+
+            const entry = { id: Date.now(), date: new Date().toLocaleDateString(), weight: val };
+            if(user === 'gary') {
+                garyWeights.unshift(entry);
+                localStorage.setItem('spotmegk_weights_gary', JSON.stringify(garyWeights));
+            } else {
+                inesWeights.unshift(entry);
+                localStorage.setItem('spotmegk_weights_ines', JSON.stringify(inesWeights));
+            }
+            document.getElementById('weight-input').value = '';
+            renderWeightTracker();
+            alert("Weight logged successfully!");
+        });
+
+        window.deleteWeight = function(id, user) {
+            hapticFeedback();
+            if(user === 'gary') {
+                garyWeights = garyWeights.filter(w => w.id !== id);
+                localStorage.setItem('spotmegk_weights_gary', JSON.stringify(garyWeights));
+            } else {
+                inesWeights = inesWeights.filter(w => w.id !== id);
+                localStorage.setItem('spotmegk_weights_ines', JSON.stringify(inesWeights));
+            }
+            renderWeightTracker();
+        }
+
+        function renderWeightTracker() {
+            const listEl = document.getElementById('weight-history-list');
+            const weights = activeWeightTab === 'gary' ? garyWeights : inesWeights;
+            
+            document.getElementById('gary-steps-val').textContent = `${dailySteps.gary} steps`;
+            document.getElementById('ines-steps-val').textContent = `${dailySteps.ines} steps`;
+
+            listEl.innerHTML = weights.length === 0 ? `<div class="text-slate-500 text-center py-4">No weight records yet</div>` : '';
+            weights.forEach(w => {
+                listEl.innerHTML += `
+                    <div class="bg-slate-900 p-2 rounded border border-slate-700 flex justify-between items-center text-xs">
+                        <div><strong class="text-cyan-400">${w.weight} kg</strong> <span class="text-[10px] text-slate-400">(${w.date})</span></div>
+                        <button onclick="deleteWeight(${w.id}, '${activeWeightTab}')" class="text-rose-400 text-[10px]">Del</button>
+                    </div>
+                `;
+            });
+        }
 
         document.getElementById('tab-gary-workouts').addEventListener('click', () => {
             hapticFeedback();
@@ -755,6 +909,13 @@
                 
                 let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
                 
+                if (speedKmh > 1) {
+                    const stepCount = Math.round(calculateDistance(lastLat || lat, lastLng || lng, lat, lng) * 1.3);
+                    if(!IS_INES_PHONE) dailySteps.gary += stepCount;
+                    else dailySteps.ines += stepCount;
+                    localStorage.setItem('spotmegk_steps', JSON.stringify(dailySteps));
+                }
+
                 if (isWorkoutActive && !isWorkoutPaused) {
                     if (speedKmh > 1) {
                         breadcrumbCoordinates.push([lat, lng]);
