@@ -114,6 +114,14 @@
         // ================= CONFIGURATION =================
         const GITHUB_USER = "ebaygary1995-creator"; 
         const GITHUB_REPO = "SpotMeGK";
+
+        // Phone Number Configuration for Automated SOS SMS
+        const GARY_PHONE = "+353858086112";
+        const INES_PHONE = "+353873871437";
+
+        // SET TO TRUE ON INES'S PHONE, FALSE ON GARY'S PHONE
+        const IS_INES_PHONE = false; 
+        const targetSOSNumber = IS_INES_PHONE ? GARY_PHONE : INES_PHONE;
         // =================================================
 
         const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
@@ -302,7 +310,7 @@
             }
         });
 
-        // ================= SOS SMS BUTTON =================
+        // ================= AUTOMATED SOS SMS =================
         sosBtn.addEventListener('click', () => {
             if (myLastLat === null || myLastLng === null) {
                 alert("Please start location sharing first so we have your GPS coordinates for the SOS message!");
@@ -311,8 +319,8 @@
             const mapsLink = `https://www.google.com/maps?q=${myLastLat},${myLastLng}`;
             const sosMessage = encodeURIComponent(`🚨 SOS! I need help. Here is my exact location: ${mapsLink}`);
             
-            // Opens native SMS app with prefilled message
-            window.location.href = `sms:?body=${sosMessage}`;
+            // Instantly opens SMS app addressed to partner's number with location pre-filled
+            window.location.href = `sms:${targetSOSNumber}?body=${sosMessage}`;
         });
 
         // ================= FAVORITES LOGIC =================
@@ -514,7 +522,7 @@
                 isSharing = false;
                 trackText.textContent = "Start Sharing";
                 trackIcon.textContent = "🔴";
-                toggleTrackBtn.className = "bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-pink-600/30 transition flex items-center gap-1.5";
+                toggleTrackBtn.className = "bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-rose-600/30 transition flex items-center gap-1.5";
                 speedValEl.textContent = "0 km/h";
                 connectionStatus.textContent = "Disconnected";
                 connectionStatus.className = "text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 font-medium border border-amber-500/30";
