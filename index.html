@@ -46,7 +46,7 @@
         </div>
 
         <div class="flex items-center gap-1">
-            <button onclick="openTapoApp()" class="bg-amber-600/25 hover:bg-amber-600/40 text-amber-300 px-2 py-1 rounded text-[11px] font-semibold border border-amber-500/40" title="Open Tapo Camera App">📷 Tapo</button>
+            <button id="toggle-workouts" class="bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 px-2 py-1 rounded text-[11px] font-semibold border border-emerald-500/40">🏃 Workouts</button>
             <button id="toggle-chat" class="bg-pink-600/30 hover:bg-pink-600/40 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold border border-pink-500/40">💬 Chat</button>
             <button id="toggle-weather-hub" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">🌤️ Weather</button>
             <button id="toggle-stats" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📊 Stats</button>
@@ -116,7 +116,6 @@
             </div>
         </div>
 
-        <!-- Chat Sidebar -->
         <div id="chat-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
                 <h2 class="font-bold text-sm text-slate-200">💬 Live Couple Chat</h2>
@@ -128,6 +127,44 @@
             <div class="p-3 border-t border-slate-700 bg-slate-900 flex gap-2">
                 <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-pink-500">
                 <button id="send-chat" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 rounded text-xs font-semibold">Send</button>
+            </div>
+        </div>
+
+        <!-- Workout Hub Sidebar -->
+        <div id="workout-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200">🏃 Workout Tracker</h2>
+                <button id="close-workout" class="text-slate-400 text-sm font-bold px-2">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <label class="font-bold text-slate-300">Select Activity:</label>
+                    <select id="workout-type" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                        <option value="Cycle">🚴 Cycle</option>
+                        <option value="Walk">🚶 Walk</option>
+                        <option value="Run">🏃 Run</option>
+                        <option value="Hike">🥾 Hike</option>
+                    </select>
+                    <div class="flex gap-2 pt-2">
+                        <button id="start-workout" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded font-bold">Start</button>
+                        <button id="pause-workout" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded font-bold hidden">Pause</button>
+                        <button id="stop-workout" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-1.5 rounded font-bold hidden">Stop</button>
+                    </div>
+                </div>
+                <div id="workout-live-stats" class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-1.5 hidden">
+                    <div class="font-bold text-emerald-400 mb-1">🟢 Live Session (<span id="w-type-label">Cycle</span>)</div>
+                    <div>Status: <strong id="w-status" class="text-amber-400">Recording...</strong></div>
+                    <div>Duration: <strong id="w-time" class="text-white">00:00</strong></div>
+                    <div>Distance: <strong id="w-dist" class="text-white">0.00 km</strong></div>
+                    <div>Elevation Climb: <strong id="w-climb" class="text-sky-400">0 m</strong></div>
+                    <div>Avg Speed: <strong id="w-avg-speed" class="text-emerald-400">0.0 km/h</strong></div>
+                </div>
+                <div id="workout-history-section" class="space-y-2">
+                    <div class="font-bold text-slate-200 mt-2">Saved Workouts</div>
+                    <div id="workout-history-list" class="space-y-2">
+                        <div class="text-slate-500 text-center py-4">No completed workouts yet</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -175,6 +212,11 @@
         let savedFavorites = JSON.parse(localStorage.getItem('spotmegk_favorites') || '[]');
         let safeZone = JSON.parse(localStorage.getItem('spotmegk_safezone') || 'null');
         let chatHistory = JSON.parse(localStorage.getItem('spotmegk_chat') || '[]');
+        let workoutHistory = JSON.parse(localStorage.getItem('spotmegk_workouts') || '[]');
+
+        // Workout state
+        let isWorkoutActive = false, isWorkoutPaused = false;
+        let activeWorkoutType = 'Cycle', workoutSeconds = 0, workoutDist = 0, workoutClimb = 0, workoutTimer = null;
 
         const roomInput = document.getElementById('room-input');
         const saveRoomBtn = document.getElementById('save-room');
@@ -191,7 +233,7 @@
         const toggleFollowBtn = document.getElementById('toggle-follow');
         const followLabel = document.getElementById('follow-label');
         
-        const sidebar = document.getElementById('sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar');
+        const sidebar = document.getElementById('sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar'), workoutSidebar = document.getElementById('workout-sidebar');
         const favoritesListEl = document.getElementById('favorites-list'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc'), chatMessagesEl = document.getElementById('chat-messages'), chatInputEl = document.getElementById('chat-input'), sendChatBtn = document.getElementById('send-chat');
         const favCountEl = document.getElementById('fav-count');
         const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
@@ -199,6 +241,10 @@
 
         let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-2026-7788';
         roomInput.value = currentRoom;
+
+        function hapticFeedback() {
+            if (navigator.vibrate) navigator.vibrate(40);
+        }
 
         function encryptData(text, secretKey) {
             return btoa(unescape(encodeURIComponent(text + "::" + secretKey)));
@@ -213,13 +259,9 @@
             return null;
         }
 
-        window.openTapoApp = function() {
-            window.location.href = "tapo://";
-            setTimeout(() => { window.open("https://www.tapo.com/", "_blank"); }, 500);
-        }
-
         window.exportDataToDrive = function() {
-            const backupData = { favorites: savedFavorites, safeZone: safeZone, chat: chatHistory, exportDate: new Date().toISOString() };
+            hapticFeedback();
+            const backupData = { favorites: savedFavorites, safeZone: safeZone, chat: chatHistory, workouts: workoutHistory, exportDate: new Date().toISOString() };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -248,12 +290,14 @@
         let isDarkMode = localStorage.getItem('spotmegk_darkmap') === 'true';
         if (isDarkMode) document.querySelector('.leaflet-tile-pane').classList.add('dark-tiles');
         toggleThemeBtn.addEventListener('click', () => {
+            hapticFeedback();
             isDarkMode = !isDarkMode;
             localStorage.setItem('spotmegk_darkmap', isDarkMode);
             document.querySelector('.leaflet-tile-pane').classList.toggle('dark-tiles', isDarkMode);
         });
 
         saveRoomBtn.addEventListener('click', () => {
+            hapticFeedback();
             if(roomInput.value.trim()) {
                 currentRoom = roomInput.value.trim();
                 localStorage.setItem('spotmegk_room', currentRoom);
@@ -267,33 +311,108 @@
             statsSidebar.classList.add('hidden');
             weatherSidebar.classList.add('hidden');
             chatSidebar.classList.add('hidden');
+            workoutSidebar.classList.add('hidden');
         }
 
-        document.getElementById('toggle-sidebar').addEventListener('click', () => { closeAllSidebars(); sidebar.classList.toggle('hidden'); });
+        document.getElementById('toggle-sidebar').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); sidebar.classList.toggle('hidden'); });
         document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('hidden'));
-        document.getElementById('toggle-stats').addEventListener('click', () => { closeAllSidebars(); statsSidebar.classList.toggle('hidden'); updateStats(); });
+        document.getElementById('toggle-stats').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); statsSidebar.classList.toggle('hidden'); updateStats(); });
         document.getElementById('close-stats').addEventListener('click', () => statsSidebar.classList.add('hidden'));
-        document.getElementById('toggle-weather-hub').addEventListener('click', () => { closeAllSidebars(); weatherSidebar.classList.toggle('hidden'); });
+        document.getElementById('toggle-weather-hub').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weatherSidebar.classList.toggle('hidden'); });
         document.getElementById('close-weather').addEventListener('click', () => weatherSidebar.classList.add('hidden'));
-        document.getElementById('toggle-chat').addEventListener('click', () => { closeAllSidebars(); chatSidebar.classList.toggle('hidden'); renderChat(); });
+        document.getElementById('toggle-chat').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); chatSidebar.classList.toggle('hidden'); renderChat(); });
         document.getElementById('close-chat').addEventListener('click', () => chatSidebar.classList.add('hidden'));
+        document.getElementById('toggle-workouts').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); workoutSidebar.classList.toggle('hidden'); renderWorkouts(); });
+        document.getElementById('close-workout').addEventListener('click', () => workoutSidebar.classList.add('hidden'));
 
-        // Chat Logic
-        function renderChat() {
-            chatMessagesEl.innerHTML = chatHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No messages yet. Say hello!</div>` : '';
-            chatHistory.forEach(msg => {
-                const isMe = msg.sender === myName;
-                chatMessagesEl.innerHTML += `
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2">
-                        <span class="text-[9px] text-slate-400 mb-0.5">${msg.sender} • ${new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        <div class="p-2 rounded-xl text-xs max-w-[85%] ${isMe ? 'bg-pink-600 text-white rounded-br-none' : 'bg-slate-700 text-slate-200 rounded-bl-none'}">${msg.text}</div>
+        // Workout Logic
+        const startWorkoutBtn = document.getElementById('start-workout');
+        const pauseWorkoutBtn = document.getElementById('pause-workout');
+        const stopWorkoutBtn = document.getElementById('stop-workout');
+        const workoutLiveStats = document.getElementById('workout-live-stats');
+        const workoutTypeSelect = document.getElementById('workout-type');
+
+        startWorkoutBtn.addEventListener('click', () => {
+            hapticFeedback();
+            isWorkoutActive = true; isWorkoutPaused = false;
+            activeWorkoutType = workoutTypeSelect.value;
+            workoutSeconds = 0; workoutDist = 0; workoutClimb = 0;
+            document.getElementById('w-type-label').textContent = activeWorkoutType;
+            workoutLiveStats.classList.remove('hidden');
+            startWorkoutBtn.classList.add('hidden');
+            pauseWorkoutBtn.classList.remove('hidden');
+            stopWorkoutBtn.classList.remove('hidden');
+            pauseWorkoutBtn.textContent = "Pause";
+
+            if(workoutTimer) clearInterval(workoutTimer);
+            workoutTimer = setInterval(() => {
+                if(!isWorkoutPaused) {
+                    workoutSeconds++;
+                    const mins = String(Math.floor(workoutSeconds / 60)).padStart(2, '0');
+                    const secs = String(workoutSeconds % 60).padStart(2, '0');
+                    document.getElementById('w-time').textContent = `${mins}:${secs}`;
+                }
+            }, 1000);
+        });
+
+        pauseWorkoutBtn.addEventListener('click', () => {
+            hapticFeedback();
+            isWorkoutPaused = !isWorkoutPaused;
+            pauseWorkoutBtn.textContent = isWorkoutPaused ? "Resume" : "Pause";
+            document.getElementById('w-status').textContent = isWorkoutPaused ? "Paused" : "Recording...";
+            document.getElementById('w-status').className = isWorkoutPaused ? "text-amber-400" : "text-emerald-400";
+        });
+
+        stopWorkoutBtn.addEventListener('click', () => {
+            hapticFeedback();
+            if(workoutTimer) clearInterval(workoutTimer);
+            isWorkoutActive = false; isWorkoutPaused = false;
+            
+            const hours = workoutSeconds / 3600;
+            const avgSpd = hours > 0 ? (workoutDist / 1000) / hours : 0;
+            const completedWorkout = {
+                type: activeWorkoutType,
+                date: new Date().toLocaleDateString(),
+                duration: document.getElementById('w-time').textContent,
+                distance: (workoutDist / 1000).toFixed(2),
+                climb: Math.round(workoutClimb),
+                avgSpeed: avgSpd.toFixed(1)
+            };
+
+            workoutHistory.unshift(completedWorkout);
+            localStorage.setItem('spotmegk_workouts', JSON.stringify(workoutHistory));
+            
+            workoutLiveStats.classList.add('hidden');
+            startWorkoutBtn.classList.remove('hidden');
+            pauseWorkoutBtn.classList.add('hidden');
+            stopWorkoutBtn.classList.add('hidden');
+            renderWorkouts();
+            alert("Workout finished and saved!");
+        });
+
+        function renderWorkouts() {
+            const listEl = document.getElementById('workout-history-list');
+            listEl.innerHTML = workoutHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No completed workouts yet</div>` : '';
+            workoutHistory.forEach(w => {
+                listEl.innerHTML += `
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
+                        <div class="flex justify-between font-bold text-pink-400"><span>${w.type === 'Cycle' ? '🚴' : w.type === 'Walk' ? '🚶' : w.type === 'Run' ? '🏃' : '🥾'} ${w.type}</span><span class="text-[10px] text-slate-400">${w.date}</span></div>
+                        <div class="text-[11px] grid grid-cols-2 gap-1 text-slate-300">
+                            <div>Dist: <strong>${w.distance} km</strong></div>
+                            <div>Time: <strong>${w.duration}</strong></div>
+                            <div>Climb: <strong>${w.climb} m</strong></div>
+                            <div>Avg: <strong>${w.avgSpeed} km/h</strong></div>
+                        </div>
                     </div>
                 `;
             });
-            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
+        renderWorkouts();
+
+        renderChat();
 
         sendChatBtn.addEventListener('click', () => {
+            hapticFeedback();
             const text = chatInputEl.value.trim();
             if(!text || !currentRoom) return;
             const secretPin = currentRoom.split('-').pop();
@@ -305,7 +424,6 @@
             renderChat();
         });
 
-        // Poll for chat updates
         setInterval(() => {
             if(!currentRoom) return;
             let rawChat = localStorage.getItem(`tracker_${currentRoom}_chat`);
@@ -347,6 +465,7 @@
         }
 
         window.sendCheckIn = function(statusMsg) {
+            hapticFeedback();
             if(!currentRoom) return;
             const secretPin = currentRoom.split('-').pop();
             const encryptedAlert = encryptData(statusMsg, secretPin);
@@ -442,6 +561,7 @@
         }
 
         centerMeBtn.addEventListener('click', () => {
+            hapticFeedback();
             if (myLastLat !== null && myLastLng !== null) {
                 map.setView([myLastLat, myLastLng], 16);
             } else {
@@ -462,9 +582,10 @@
             }
         });
 
-        centerPartnerBtn.addEventListener('click', () => { if (partnerLastLat) map.setView([partnerLastLat, partnerLastLng], 16); else alert("Waiting for partner signal..."); });
+        centerPartnerBtn.addEventListener('click', () => { hapticFeedback(); if (partnerLastLat) map.setView([partnerLastLat, partnerLastLng], 16); else alert("Waiting for partner signal..."); });
 
         parkCarBtn.addEventListener('click', () => {
+            hapticFeedback();
             if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
             const parkSpot = { name: "🚗 Parked Car", lat: myLastLat, lng: myLastLng };
             savedFavorites.unshift(parkSpot);
@@ -474,6 +595,7 @@
         });
 
         setGeofenceBtn.addEventListener('click', () => {
+            hapticFeedback();
             if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
             const zoneName = prompt("Name this Safe Zone:", "Home");
             if (zoneName) {
@@ -490,6 +612,7 @@
         }
 
         meetHereBtn.addEventListener('click', () => {
+            hapticFeedback();
             if (meetBeaconMarker) { map.removeLayer(meetBeaconMarker); meetBeaconMarker = null; alert("Beacon removed."); return; }
             if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
             meetBeaconMarker = L.marker([myLastLat, myLastLng], {
@@ -498,6 +621,7 @@
         });
 
         sosBtn.addEventListener('click', () => {
+            hapticFeedback();
             if (!myLastLat) { alert("Acquiring GPS fix for SOS..."); return; }
             window.location.href = `sms:${targetSOSNumber}?body=${encodeURIComponent(`🚨 SOS! Location: https://www.google.com/maps?q=${myLastLat},${myLastLng}`)}`;
         });
@@ -526,6 +650,7 @@
         window.deleteFavorite = (i) => { savedFavorites.splice(i,1); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
 
         saveSpotBtn.addEventListener('click', () => {
+            hapticFeedback();
             if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
             const name = prompt("Name this spot:", "Spot");
             if (name) { savedFavorites.push({ name, lat: myLastLat, lng: myLastLng }); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
@@ -546,18 +671,36 @@
                 const currentAlt = pos.coords.altitude;
                 myLastLat = lat; myLastLng = lng;
                 
-                breadcrumbCoordinates.push([lat, lng]);
-                breadcrumbPolyline.setLatLngs(breadcrumbCoordinates);
+                let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
+                
+                // Auto-pause workout if stationary
+                if (isWorkoutActive && !isWorkoutPaused) {
+                    if (speedKmh > 1) {
+                        breadcrumbCoordinates.push([lat, lng]);
+                        breadcrumbPolyline.setLatLngs(breadcrumbCoordinates);
+                        if (lastLat && lastLng) {
+                            const stepDist = calculateDistance(lastLat, lastLng, lat, lng);
+                            workoutDist += stepDist;
+                        }
+                        if (currentAlt !== null && lastAltitude !== null) {
+                            const altDiff = currentAlt - lastAltitude;
+                            if (altDiff > 0 && altDiff < 10) workoutClimb += altDiff;
+                        }
+                        const activeHrs = workoutSeconds / 3600;
+                        const wAvgSpd = activeHrs > 0 ? (workoutDist / 1000) / activeHrs : 0;
+
+                        document.getElementById('w-dist').textContent = `${(workoutDist/1000).toFixed(2)} km`;
+                        document.getElementById('w-climb').textContent = `${Math.round(workoutClimb)} m`;
+                        document.getElementById('w-avg-speed').textContent = `${wAvgSpd.toFixed(1)} km/h`;
+                    }
+                }
 
                 if (currentAlt !== null && lastAltitude !== null) {
                     const altDiff = currentAlt - lastAltitude;
-                    if (altDiff > 0 && altDiff < 10) {
-                        elevationGain += altDiff;
-                    }
+                    if (altDiff > 0 && altDiff < 10) elevationGain += altDiff;
                 }
                 if (currentAlt !== null) lastAltitude = currentAlt;
 
-                let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
                 if(speedKmh > topSpeed) topSpeed = speedKmh;
                 if(lastLat && lastLng) totalDistance += calculateDistance(lastLat, lastLng, lat, lng);
                 lastLat = lat; lastLng = lng;
