@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SpotMeGK - Private Couple Tracker</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,8 +11,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         .custom-profile-marker {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid white;
@@ -34,80 +34,112 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
-    <!-- Header -->
-    <header class="bg-slate-800 border-b border-slate-700 p-2.5 shadow-md flex justify-between items-center z-30">
-        <h1 class="text-sm font-bold flex items-center gap-1.5">
+    <!-- Header / Mobile POV Optimized -->
+    <header class="bg-slate-800 border-b border-slate-700 px-2 py-2 shadow-md flex justify-between items-center z-30">
+        <h1 class="text-xs sm:text-sm font-bold flex items-center gap-1">
             📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">SpotMeGK</span>
         </h1>
         
         <!-- Weather Widget Header Preview -->
-        <div id="weather-widget" class="hidden sm:flex items-center gap-1.5 text-[11px] bg-slate-900/60 px-2.5 py-0.5 rounded-full border border-slate-700 text-slate-300">
+        <div id="weather-widget" class="hidden md:flex items-center gap-1 text-[11px] bg-slate-900/60 px-2 py-0.5 rounded-full border border-slate-700 text-slate-300">
             🌤️ <span id="weather-text">Loading...</span>
         </div>
 
-        <div class="flex items-center gap-1">
-            <button id="toggle-workouts" class="bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 px-2 py-1 rounded text-[11px] font-semibold border border-emerald-500/40">🏃 Workouts</button>
-            <button id="toggle-weight" class="bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-300 px-2 py-1 rounded text-[11px] font-semibold border border-cyan-500/40">⚖️ Weight</button>
-            <button id="toggle-chat" class="bg-pink-600/30 hover:bg-pink-600/40 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold border border-pink-500/40">💬 Chat</button>
-            <button id="toggle-weather-hub" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">🌤️ Weather</button>
-            <button id="toggle-stats" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">📊 Stats</button>
-            <button id="toggle-sidebar" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded text-[11px] font-semibold border border-slate-600">⭐ Favs (<span id="fav-count">0</span>)</button>
+        <div class="flex items-center gap-0.5 sm:gap-1">
+            <button id="toggle-goals" class="bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-amber-500/40">🎯 Goals</button>
+            <button id="toggle-workouts" class="bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-emerald-500/40">🏃 Workouts</button>
+            <button id="toggle-weight" class="bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-cyan-500/40">⚖️ Weight</button>
+            <button id="toggle-history" class="bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-indigo-500/40">📅 Log</button>
+            <button id="toggle-chat" class="hidden sm:inline-block bg-pink-600/30 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold border border-pink-500/40">💬 Chat</button>
+            <button id="toggle-weather-hub" class="bg-slate-700 text-slate-200 px-1.5 py-1 rounded text-[10px] sm:text-[11px] font-semibold">🌤️</button>
+            <button id="toggle-stats" class="bg-slate-700 text-slate-200 px-1.5 py-1 rounded text-[10px] sm:text-[11px] font-semibold">📊</button>
+            <button id="toggle-sidebar" class="bg-slate-700 text-slate-200 px-1.5 py-1 rounded text-[10px] sm:text-[11px] font-semibold">⭐ (<span id="fav-count">0</span>)</button>
         </div>
     </header>
 
     <!-- Configuration & Quick Status Bar -->
-    <div class="bg-slate-800/90 p-2 border-b border-slate-700 flex flex-wrap gap-2 items-center justify-between text-xs z-30 shadow-md">
-        <div class="flex items-center gap-1.5">
-            <input type="text" id="room-input" placeholder="Room-PIN (e.g. gary-ines-1995)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none focus:border-pink-500 w-40">
-            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[11px] font-medium">Save</button>
+    <div class="bg-slate-800/90 p-1.5 sm:p-2 border-b border-slate-700 flex flex-wrap gap-1.5 items-center justify-between text-xs z-30 shadow-md">
+        <div class="flex items-center gap-1">
+            <input type="text" id="room-input" placeholder="Room-PIN (gary-ines-1995)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[10px] sm:text-[11px] text-white focus:outline-none focus:border-pink-500 w-32 sm:w-36">
+            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px] sm:text-[11px] font-medium">Save</button>
         </div>
         
         <!-- Status Check-In Buttons -->
         <div class="flex items-center gap-1">
-            <button onclick="sendCheckIn('🏠 Safe')" class="bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-semibold">🏠 Safe</button>
-            <button onclick="sendCheckIn('🚗 Home')" class="bg-blue-600/20 border border-blue-500/40 text-blue-300 px-2 py-0.5 rounded text-[10px] font-semibold">🚗 Home</button>
-            <button onclick="sendCheckIn('⏰ Late')" class="bg-amber-600/20 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded text-[10px] font-semibold">⏰ Late</button>
+            <button onclick="sendCheckIn('🏠 Safe')" class="bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 px-1.5 py-0.5 rounded text-[10px] font-semibold">🏠 Safe</button>
+            <button onclick="sendCheckIn('🚗 Home')" class="bg-blue-600/20 border border-blue-500/40 text-blue-300 px-1.5 py-0.5 rounded text-[10px] font-semibold">🚗 Home</button>
+            <button onclick="sendCheckIn('⏰ Late')" class="bg-amber-600/20 border border-amber-500/40 text-amber-300 px-1.5 py-0.5 rounded text-[10px] font-semibold">⏰ Late</button>
         </div>
 
         <div class="flex items-center gap-1">
-            <button id="center-me" class="bg-pink-600/20 border border-pink-500/40 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold">🔴 Me</button>
-            <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2.5 py-1 rounded text-[11px] font-semibold">🟣 Ines <span id="partner-status" class="text-[9px] text-slate-400"></span></button>
-            <button id="toggle-follow" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Auto-Follow Partner">👀 <span id="follow-label">Off</span></button>
+            <button id="center-me" class="bg-pink-600/20 border border-pink-500/40 text-pink-300 px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold">🔴 Me</button>
+            <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2 py-1 rounded text-[10px] font-semibold">🟣 Ines <span id="partner-status" class="text-[8px] text-slate-400"></span></button>
+            <button id="toggle-follow" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Auto-Follow">👀 <span id="follow-label">Off</span></button>
             <button id="toggle-mode" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Battery Mode">⚡ <span id="mode-label">Fast</span></button>
-            <button id="toggle-theme" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[11px] border border-slate-600">🌗</button>
+            <button id="toggle-theme" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600">🌗</button>
         </div>
     </div>
 
     <!-- Alert Banner with Close Button -->
-    <div id="alert-banner" class="hidden bg-pink-600 text-white text-xs font-bold py-1.5 px-4 text-center z-30 flex items-center justify-center gap-3 shadow-lg">
+    <div id="alert-banner" class="hidden bg-pink-600 text-white text-xs font-bold py-1 px-3 text-center z-30 flex items-center justify-between shadow-lg">
         <span>📢 <span id="alert-text">Status update</span></span>
-        <button onclick="dismissAlertBanner()" class="bg-pink-800 hover:bg-pink-900 text-white px-2 py-0.5 rounded text-[11px] font-extrabold">&times; Close</button>
+        <button onclick="dismissAlertBanner()" class="bg-pink-800 hover:bg-pink-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold">&times; Close</button>
     </div>
 
     <!-- Workspace Container -->
     <div class="flex-1 flex relative overflow-hidden">
         <div id="map" class="flex-1 h-full z-10"></div>
 
-        <!-- Sidebars -->
-        <div id="sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+        <!-- Sidebars (Mobile Optimized Width: w-72 or w-80 max-w-full) -->
+        <div id="sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">⭐ Favorites</h2><button id="close-sidebar" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div id="favorites-list" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs"></div>
         </div>
 
-        <div id="stats-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+        <!-- Goals Sidebar -->
+        <div id="goals-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200">🎯 Countdown Goal Counter</h2>
+                <button id="close-goals" class="text-slate-400 text-sm font-bold px-2">&times;</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="font-bold text-amber-400">Add New Goal</div>
+                    <input type="text" id="goal-name-input" placeholder="Goal Name (e.g., Summer Holiday)" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    <input type="date" id="goal-date-input" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    <button id="save-goal-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded font-bold">Add Countdown Goal</button>
+                </div>
+                <div id="goals-list" class="space-y-2">
+                    <div class="text-slate-500 text-center py-4">No countdown goals added yet</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="history-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
+                <h2 class="font-bold text-sm text-slate-200">📅 14-Day Activity Log</h2>
+                <button id="close-history" class="text-slate-400 text-sm font-bold px-2">&times;</button>
+            </div>
+            <div id="history-content" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs">
+                <div class="text-slate-500 text-center py-4">No past logs recorded yet</div>
+            </div>
+        </div>
+
+        <div id="stats-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📊 Stats & Backup</h2><button id="close-stats" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div id="stats-content" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs"></div>
         </div>
 
-        <div id="weather-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+        <div id="weather-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">🌤️ Weather & News Hub</h2>
+                <h2 class="font-bold text-sm text-slate-200">🌤️ Weather & Daylight Hub</h2>
                 <button id="close-weather" class="text-slate-400 text-sm font-bold px-2">&times;</button>
             </div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
                     <div class="font-bold text-pink-400 mb-1">📍 Local Forecast Status</div>
                     <div id="hub-weather-desc" class="text-slate-300">Acquiring local meteorological data...</div>
+                    <div id="daylight-desc" class="text-amber-400 mt-2 font-semibold">🌅 Daylight: Calculating...</div>
                 </div>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <div class="font-bold text-slate-200">🇮🇪 Met Éireann & News Links</div>
@@ -118,7 +150,7 @@
             </div>
         </div>
 
-        <div id="chat-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+        <div id="chat-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
                 <h2 class="font-bold text-sm text-slate-200">💬 Live Couple Chat</h2>
                 <button id="close-chat" class="text-slate-400 text-sm font-bold px-2">&times;</button>
@@ -132,32 +164,13 @@
             </div>
         </div>
 
-        <!-- Weight Tracking & Pedometer Sidebar -->
-        <div id="weight-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+        <!-- Weight Tracking Sidebar -->
+        <div id="weight-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">⚖️ Weight Tracker & Steps</h2>
+                <h2 class="font-bold text-sm text-slate-200">⚖️ Weight Tracker</h2>
                 <button id="close-weight" class="text-slate-400 text-sm font-bold px-2">&times;</button>
             </div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
-                <!-- Pedometer Leaderboard -->
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                    <div class="font-bold text-amber-400 flex justify-between items-center">
-                        <span>🏆 Pedometer Leaderboard</span>
-                        <span class="text-[10px] text-slate-400">Walking Only</span>
-                    </div>
-                    <div class="space-y-1.5">
-                        <div class="flex justify-between bg-slate-800 p-2 rounded border border-slate-700 items-center">
-                            <span>👤 Gary</span>
-                            <strong id="gary-steps-val" class="text-emerald-400">0 steps</strong>
-                        </div>
-                        <div class="flex justify-between bg-slate-800 p-2 rounded border border-slate-700 items-center">
-                            <span>👤 Ines</span>
-                            <strong id="ines-steps-val" class="text-purple-400">0 steps</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Weight Logger -->
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <div class="font-bold text-cyan-400">Log Weight Entry</div>
                     <div class="flex gap-2">
@@ -165,18 +178,16 @@
                             <option value="gary">Gary</option>
                             <option value="ines">Ines</option>
                         </select>
-                        <input type="number" step="0.1" id="weight-input" placeholder="kg (e.g. 75.5)" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1">
+                        <input type="number" step="0.1" id="weight-input" placeholder="kg (75.5)" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1">
                     </div>
                     <button id="save-weight-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1.5 rounded font-bold">Save Weight</button>
                 </div>
 
-                <!-- Weight History & Chart Tabs -->
                 <div class="flex border-b border-slate-700">
-                    <button id="tab-gary-weight" class="flex-1 py-1.5 font-bold text-cyan-400 border-b-2 border-cyan-500 text-center">Gary's Weight</button>
-                    <button id="tab-ines-weight" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines's Weight</button>
+                    <button id="tab-gary-weight" class="flex-1 py-1.5 font-bold text-cyan-400 border-b-2 border-cyan-500 text-center">Gary</button>
+                    <button id="tab-ines-weight" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines</button>
                 </div>
 
-                <!-- Weight Graph Container -->
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <div class="font-bold text-slate-300 text-[11px]">📈 Weight Progress Chart</div>
                     <div id="weight-chart-container" class="w-full h-32 flex items-end justify-center bg-slate-950 rounded border border-slate-800 p-1 relative overflow-hidden">
@@ -191,7 +202,7 @@
         </div>
 
         <!-- Workout Hub Sidebar -->
-        <div id="workout-sidebar" class="w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
+        <div id="workout-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
                 <h2 class="font-bold text-sm text-slate-200">🏃 Workout Tracker</h2>
                 <button id="close-workout" class="text-slate-400 text-sm font-bold px-2">&times;</button>
@@ -221,8 +232,8 @@
                 </div>
 
                 <div class="flex border-b border-slate-700">
-                    <button id="tab-gary-workouts" class="flex-1 py-1.5 font-bold text-pink-400 border-b-2 border-pink-500 text-center">Gary's Workouts</button>
-                    <button id="tab-ines-workouts" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines's Workouts</button>
+                    <button id="tab-gary-workouts" class="flex-1 py-1.5 font-bold text-pink-400 border-b-2 border-pink-500 text-center">Gary</button>
+                    <button id="tab-ines-workouts" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines</button>
                 </div>
 
                 <div id="workout-history-section" class="space-y-2 pt-1">
@@ -231,20 +242,20 @@
                     </div>
                 </div>
 
-                <button onclick="exportReadableReport()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg font-semibold mt-2">📄 Export Readable Report</button>
-                <button onclick="exportWorkoutsToSheets()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold mt-1">📊 Export to Google Sheets (CSV)</button>
+                <button onclick="exportReadableReport()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg font-semibold mt-2">📄 Export Report</button>
+                <button onclick="exportWorkoutsToSheets()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold mt-1">📊 Export CSV</button>
             </div>
         </div>
     </div>
 
-    <!-- Bottom Bar -->
-    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 backdrop-blur border border-slate-700 px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 max-w-[95vw] overflow-x-auto">
-        <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap shadow">📍 Meet</button>
-        <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
-        <button id="park-car-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap">🚗 Park</button>
-        <button id="set-geofence" class="bg-teal-600 hover:bg-teal-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap">🛡️ Zone</button>
-        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
-        <div class="text-[10px] text-slate-400 flex flex-col border-l border-slate-700 pl-2 whitespace-nowrap">
+    <!-- Bottom Bar (Mobile POV Optimized Layout) -->
+    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 backdrop-blur border border-slate-700 px-2.5 py-1.5 rounded-2xl shadow-xl flex items-center gap-1.5 max-w-[98vw] overflow-x-auto">
+        <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap shadow">📍 Meet</button>
+        <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
+        <button id="park-car-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🚗 Park</button>
+        <button id="set-geofence" class="bg-teal-600 hover:bg-teal-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🛡️ Zone</button>
+        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
+        <div class="text-[9px] sm:text-[10px] text-slate-400 flex flex-col border-l border-slate-700 pl-2 whitespace-nowrap">
             <span>Spd: <strong id="speed-val" class="text-emerald-400">0k/h</strong></span>
             <span>Climb: <strong id="climb-val" class="text-sky-400">0m</strong></span>
         </div>
@@ -292,9 +303,21 @@
         let inesWeights = JSON.parse(localStorage.getItem('spotmegk_weights_ines') || '[]');
         let activeWeightTab = 'gary';
 
-        let dailySteps = JSON.parse(localStorage.getItem('spotmegk_steps') || JSON.stringify({ gary: 0, ines: 0, date: new Date().toLocaleDateString() }));
-        if (dailySteps.date !== new Date().toLocaleDateString()) {
-            dailySteps = { gary: 0, ines: 0, date: new Date().toLocaleDateString() };
+        let countdownGoals = JSON.parse(localStorage.getItem('spotmegk_goals') || '[]');
+
+        let activityHistory = JSON.parse(localStorage.getItem('spotmegk_14day_history') || '[]');
+        function recordDailyLog(dist, climb, topSpd) {
+            const todayStr = new Date().toLocaleDateString();
+            let existing = activityHistory.find(h => h.date === todayStr);
+            if (existing) {
+                existing.distance = (parseFloat(existing.distance) + (dist/1000)).toFixed(2);
+                existing.climb += Math.round(climb);
+                existing.topSpeed = Math.max(existing.topSpeed, topSpd);
+            } else {
+                activityHistory.unshift({ date: todayStr, distance: (dist/1000).toFixed(2), climb: Math.round(climb), topSpeed: topSpd });
+            }
+            if (activityHistory.length > 14) activityHistory.pop();
+            localStorage.setItem('spotmegk_14day_history', JSON.stringify(activityHistory));
         }
 
         let isWorkoutActive = false, isWorkoutPaused = false;
@@ -315,8 +338,8 @@
         const toggleFollowBtn = document.getElementById('toggle-follow');
         const followLabel = document.getElementById('follow-label');
         
-        const sidebar = document.getElementById('sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar'), workoutSidebar = document.getElementById('workout-sidebar'), weightSidebar = document.getElementById('weight-sidebar');
-        const favoritesListEl = document.getElementById('favorites-list'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc'), chatMessagesEl = document.getElementById('chat-messages'), chatInputEl = document.getElementById('chat-input'), sendChatBtn = document.getElementById('send-chat');
+        const sidebar = document.getElementById('sidebar'), goalsSidebar = document.getElementById('goals-sidebar'), historySidebar = document.getElementById('history-sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar'), workoutSidebar = document.getElementById('workout-sidebar'), weightSidebar = document.getElementById('weight-sidebar');
+        const favoritesListEl = document.getElementById('favorites-list'), goalsListEl = document.getElementById('goals-list'), historyContentEl = document.getElementById('history-content'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc'), daylightDesc = document.getElementById('daylight-desc'), chatMessagesEl = document.getElementById('chat-messages'), chatInputEl = document.getElementById('chat-input'), sendChatBtn = document.getElementById('send-chat');
         const favCountEl = document.getElementById('fav-count');
         const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
         const alertBanner = document.getElementById('alert-banner'), alertText = document.getElementById('alert-text'), weatherText = document.getElementById('weather-text');
@@ -345,7 +368,6 @@
             alertText.textContent = msg;
             alertBanner.classList.remove('hidden');
             if(alertDismissTimer) clearTimeout(alertDismissTimer);
-            // Auto hide after 5 seconds
             alertDismissTimer = setTimeout(() => {
                 alertBanner.classList.add('hidden');
             }, 5000);
@@ -357,9 +379,18 @@
             alertBanner.classList.add('hidden');
         }
 
+        toggleModeBtn.addEventListener('click', () => {
+            hapticFeedback();
+            isBatterySaver = !isBatterySaver;
+            modeLabel.textContent = isBatterySaver ? "Eco" : "Fast";
+            modeLabel.className = isBatterySaver ? "text-amber-400 font-bold" : "text-emerald-400 font-bold";
+            if(watchID) navigator.geolocation.clearWatch(watchID);
+            startTracking();
+        });
+
         window.exportDataToDrive = function() {
             hapticFeedback();
-            const backupData = { favorites: savedFavorites, safeZone, chat: chatHistory, garyWorkouts, inesWorkouts, garyWeights, inesWeights, exportDate: new Date().toISOString() };
+            const backupData = { favorites: savedFavorites, safeZone, chat: chatHistory, garyWorkouts, inesWorkouts, garyWeights, inesWeights, history: activityHistory, goals: countdownGoals, exportDate: new Date().toISOString() };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -447,6 +478,8 @@
 
         function closeAllSidebars() {
             sidebar.classList.add('hidden');
+            goalsSidebar.classList.add('hidden');
+            historySidebar.classList.add('hidden');
             statsSidebar.classList.add('hidden');
             weatherSidebar.classList.add('hidden');
             chatSidebar.classList.add('hidden');
@@ -456,6 +489,10 @@
 
         document.getElementById('toggle-sidebar').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); sidebar.classList.toggle('hidden'); renderFavorites(); });
         document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('hidden'));
+        document.getElementById('toggle-goals').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); goalsSidebar.classList.toggle('hidden'); renderGoals(); });
+        document.getElementById('close-goals').addEventListener('click', () => goalsSidebar.classList.add('hidden'));
+        document.getElementById('toggle-history').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); historySidebar.classList.toggle('hidden'); renderHistoryLog(); });
+        document.getElementById('close-history').addEventListener('click', () => historySidebar.classList.add('hidden'));
         document.getElementById('toggle-stats').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); statsSidebar.classList.toggle('hidden'); updateStats(); });
         document.getElementById('close-stats').addEventListener('click', () => statsSidebar.classList.add('hidden'));
         document.getElementById('toggle-weather-hub').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weatherSidebar.classList.toggle('hidden'); });
@@ -466,6 +503,75 @@
         document.getElementById('close-workout').addEventListener('click', () => workoutSidebar.classList.add('hidden'));
         document.getElementById('toggle-weight').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weightSidebar.classList.toggle('hidden'); renderWeightTracker(); });
         document.getElementById('close-weight').addEventListener('click', () => weightSidebar.classList.add('hidden'));
+
+        // Countdown Goals Logic
+        document.getElementById('save-goal-btn').addEventListener('click', () => {
+            hapticFeedback();
+            const name = document.getElementById('goal-name-input').value.trim();
+            const dateStr = document.getElementById('goal-date-input').value;
+            if(!name || !dateStr) { alert("Please enter a goal name and target date!"); return; }
+
+            countdownGoals.push({ id: Date.now(), name, targetDate: dateStr });
+            localStorage.setItem('spotmegk_goals', JSON.stringify(countdownGoals));
+            document.getElementById('goal-name-input').value = '';
+            document.getElementById('goal-date-input').value = '';
+            renderGoals();
+            alert("Goal added!");
+        });
+
+        window.deleteGoal = function(id) {
+            hapticFeedback();
+            countdownGoals = countdownGoals.filter(g => g.id !== id);
+            localStorage.setItem('spotmegk_goals', JSON.stringify(countdownGoals));
+            renderGoals();
+        }
+
+        function renderGoals() {
+            goalsListEl.innerHTML = countdownGoals.length === 0 ? `<div class="text-slate-500 text-center py-4">No countdown goals added yet</div>` : '';
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            countdownGoals.forEach(g => {
+                const target = new Date(g.targetDate);
+                target.setHours(0,0,0,0);
+                const diffTime = target - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                let badgeText = diffDays > 0 ? `${diffDays} days left` : diffDays === 0 ? `Today is the day! 🎯` : `Goal passed`;
+                let badgeColor = diffDays > 0 ? 'text-amber-400' : 'text-emerald-400';
+
+                goalsListEl.innerHTML += `
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
+                        <div class="flex justify-between font-bold text-slate-200">
+                            <span>🎯 ${g.name}</span>
+                            <button onclick="deleteGoal(${g.id})" class="text-rose-400 text-[10px]">Del</button>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-400">
+                            <span>Target: ${g.targetDate}</span>
+                            <strong class="${badgeColor}">${badgeText}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderHistoryLog() {
+            historyContentEl.innerHTML = activityHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No past logs recorded yet</div>` : '';
+            activityHistory.forEach(h => {
+                historyContentEl.innerHTML += `
+                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
+                        <div class="flex justify-between font-bold text-pink-400">
+                            <span>📅 ${h.date}</span>
+                            <span class="text-[10px] text-slate-400">Top: ${h.topSpeed} km/h</span>
+                        </div>
+                        <div class="text-[11px] grid grid-cols-2 gap-1 text-slate-300">
+                            <div>Dist: <strong>${h.distance} km</strong></div>
+                            <div>Climb: <strong>${h.climb} m</strong></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
         document.getElementById('tab-gary-weight').addEventListener('click', () => {
             hapticFeedback();
@@ -519,9 +625,6 @@
             const chartContainer = document.getElementById('weight-chart-container');
             const weights = activeWeightTab === 'gary' ? [...garyWeights].reverse() : [...inesWeights].reverse();
             const rawWeights = activeWeightTab === 'gary' ? garyWeights : inesWeights;
-            
-            document.getElementById('gary-steps-val').textContent = `${dailySteps.gary} steps`;
-            document.getElementById('ines-steps-val').textContent = `${dailySteps.ines} steps`;
 
             if (rawWeights.length > 0) {
                 const maxW = Math.max(...rawWeights.map(w => w.weight)) + 2;
@@ -752,6 +855,7 @@
                 const wind = Math.round(data.current.wind_speed_10m);
                 weatherText.textContent = `${temp}°C • Wind: ${wind} km/h`;
                 hubWeatherDesc.innerHTML = `Current Temperature: <b>${temp}°C</b><br>Wind Speed: <b>${wind} km/h</b><br><span class="text-slate-400">Calibrated for County Kildare.</span>`;
+                daylightDesc.innerHTML = `🌅 Outdoor Training Hub Active<br><span class="text-slate-300">Optimal lighting conditions for Kildare routes.</span>`;
             } catch(e) { 
                 weatherText.textContent = "Weather offline"; 
                 hubWeatherDesc.textContent = "Unable to fetch live meteorological data.";
@@ -819,10 +923,10 @@
 
         function getMarkerIcon(speed) {
             const iconUrl = speed > 30 ? 'https://cdn-icons-png.flaticon.com/512/741/741407.png' : myImageUrl;
-            return L.icon({ iconUrl: iconUrl, iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -44], className: 'custom-profile-marker' });
+            return L.icon({ iconUrl: iconUrl, iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -40], className: 'custom-profile-marker' });
         }
 
-        const inesIconStyle = L.icon({ iconUrl: partnerImageUrl, iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -44], className: 'custom-profile-marker' });
+        const inesIconStyle = L.icon({ iconUrl: partnerImageUrl, iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -40], className: 'custom-profile-marker' });
 
         function updatePartnerMap(lat, lng, timestamp, battery) {
             const secondsAgo = timestamp ? Math.round((new Date() - new Date(timestamp)) / 1000) : 0;
@@ -880,7 +984,7 @@
         parkCarBtn.addEventListener('click', () => {
             hapticFeedback();
             if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
-            const parkSpot = { name: "🚗 Parked Car", lat: myLastLat, lng: myLastLng };
+            const parkSpot = { name: "🚗 Parked Car", lat: myLastLat, lng: myLastLng, category: "Parking" };
             savedFavorites.unshift(parkSpot);
             localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites));
             renderFavorites();
@@ -937,7 +1041,8 @@
             favCountEl.textContent = savedFavorites.length;
             favoritesListEl.innerHTML = savedFavorites.length === 0 ? `<div class="text-slate-500 text-center py-8">No favorites yet</div>` : '';
             savedFavorites.forEach((fav, i) => {
-                favoritesListEl.innerHTML += `<div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-1"><div class="flex justify-between"><b>📌 ${fav.name}</b><button onclick="deleteFavorite(${i})" class="text-rose-400">Del</button></div><a href="https://www.google.com/maps/dir/?api=1&destination=${fav.lat},${fav.lng}" target="_blank" class="bg-blue-600 text-white py-1 rounded text-center">🧭 Navigate</a></div>`;
+                const catColor = fav.category === 'Coffee' ? 'text-amber-400' : fav.category === 'Scenic' ? 'text-emerald-400' : 'text-pink-400';
+                favoritesListEl.innerHTML += `<div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-1"><div class="flex justify-between"><b class="${catColor}">📌 ${fav.name}</b><button onclick="deleteFavorite(${i})" class="text-rose-400">Del</button></div><a href="https://www.google.com/maps/dir/?api=1&destination=${fav.lat},${fav.lng}" target="_blank" class="bg-blue-600 text-white py-1 rounded text-center">🧭 Navigate</a></div>`;
             });
         }
         window.deleteFavorite = (i) => { savedFavorites.splice(i,1); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
@@ -946,7 +1051,12 @@
             hapticFeedback();
             if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
             const name = prompt("Name this spot:", "Spot");
-            if (name) { savedFavorites.push({ name, lat: myLastLat, lng: myLastLng }); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
+            const category = prompt("Category (Coffee, Scenic, Maintenance, General):", "General");
+            if (name) { 
+                savedFavorites.push({ name, lat: myLastLat, lng: myLastLng, category: category || 'General' }); 
+                localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); 
+                renderFavorites(); 
+            }
         });
 
         renderFavorites();
@@ -954,8 +1064,8 @@
         function startTracking() {
             if (!navigator.geolocation) return;
             const options = {
-                enableHighAccuracy: true,
-                maximumAge: 5000,
+                enableHighAccuracy: !isBatterySaver,
+                maximumAge: isBatterySaver ? 15000 : 5000,
                 timeout: 10000
             };
             watchID = navigator.geolocation.watchPosition((pos) => {
@@ -965,28 +1075,6 @@
                 myLastLat = lat; myLastLng = lng;
                 
                 let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
-                
-                if (speedKmh >= 2.5 && speedKmh <= 6.5) {
-                    if (lastLat && lastLng) {
-                        const distanceMeters = calculateDistance(lastLat, lastLng, lat, lng);
-                        const strideLengthMeters = 0.75; 
-                        const stepsWalked = Math.round(distanceMeters / strideLengthMeters);
-                        
-                        if (stepsWalked > 0 && stepsWalked < 200) {
-                            if (!IS_INES_PHONE) {
-                                dailySteps.gary += stepsWalked;
-                            } else {
-                                dailySteps.ines += stepsWalked;
-                            }
-                            localStorage.setItem('spotmegk_steps', JSON.stringify(dailySteps));
-                            
-                            const garyStepsEl = document.getElementById('gary-steps-val');
-                            const inesStepsEl = document.getElementById('ines-steps-val');
-                            if (garyStepsEl) garyStepsEl.textContent = `${dailySteps.gary} steps`;
-                            if (inesStepsEl) inesStepsEl.textContent = `${dailySteps.ines} steps`;
-                        }
-                    }
-                }
 
                 if (isWorkoutActive && !isWorkoutPaused) {
                     if (speedKmh > 1) {
@@ -1016,7 +1104,11 @@
                 if (currentAlt !== null) lastAltitude = currentAlt;
 
                 if(speedKmh > topSpeed) topSpeed = speedKmh;
-                if(lastLat && lastLng) totalDistance += calculateDistance(lastLat, lastLng, lat, lng);
+                if(lastLat && lastLng) {
+                    const d = calculateDistance(lastLat, lastLng, lat, lng);
+                    totalDistance += d;
+                    recordDailyLog(d, elevationGain, topSpeed);
+                }
                 lastLat = lat; lastLng = lng;
 
                 speedValEl.textContent = `${speedKmh}k/h`;
