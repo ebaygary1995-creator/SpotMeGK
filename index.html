@@ -142,7 +142,7 @@
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <div class="font-bold text-amber-400 flex justify-between items-center">
                         <span>🏆 Pedometer Leaderboard</span>
-                        <span class="text-[10px] text-slate-400">Today</span>
+                        <span class="text-[10px] text-slate-400">Walking Only</span>
                     </div>
                     <div class="space-y-1.5">
                         <div class="flex justify-between bg-slate-800 p-2 rounded border border-slate-700 items-center">
@@ -169,11 +169,20 @@
                     <button id="save-weight-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1.5 rounded font-bold">Save Weight</button>
                 </div>
 
-                <!-- Weight History Tabs & Lists -->
+                <!-- Weight History & Chart Tabs -->
                 <div class="flex border-b border-slate-700">
                     <button id="tab-gary-weight" class="flex-1 py-1.5 font-bold text-cyan-400 border-b-2 border-cyan-500 text-center">Gary's Weight</button>
                     <button id="tab-ines-weight" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines's Weight</button>
                 </div>
+
+                <!-- Weight Graph Container -->
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="font-bold text-slate-300 text-[11px]">📈 Weight Progress Chart</div>
+                    <div id="weight-chart-container" class="w-full h-32 flex items-end justify-center bg-slate-950 rounded border border-slate-800 p-1 relative overflow-hidden">
+                        <span class="text-slate-500 text-[10px] self-center">No data points logged yet</span>
+                    </div>
+                </div>
+
                 <div id="weight-history-list" class="space-y-1.5 pt-1">
                     <div class="text-slate-500 text-center py-4">No weight records yet</div>
                 </div>
@@ -343,7 +352,6 @@
             alert("Backup generated!");
         }
 
-        // Readable HTML Report Export
         window.exportReadableReport = function() {
             hapticFeedback();
             const workouts = activeWorkoutTab === 'gary' ? garyWorkouts : inesWorkouts;
@@ -441,7 +449,6 @@
         document.getElementById('toggle-weight').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weightSidebar.classList.toggle('hidden'); renderWeightTracker(); });
         document.getElementById('close-weight').addEventListener('click', () => weightSidebar.classList.add('hidden'));
 
-        // Weight Tracking & Pedometer Logic
         document.getElementById('tab-gary-weight').addEventListener('click', () => {
             hapticFeedback();
             activeWeightTab = 'gary';
@@ -466,10 +473,10 @@
 
             const entry = { id: Date.now(), date: new Date().toLocaleDateString(), weight: val };
             if(user === 'gary') {
-                garyWeights.unshift(entry);
+                garyWeights.push(entry); // Push chronological
                 localStorage.setItem('spotmegk_weights_gary', JSON.stringify(garyWeights));
             } else {
-                inesWeights.unshift(entry);
+                inesWeights.push(entry);
                 localStorage.setItem('spotmegk_weights_ines', JSON.stringify(inesWeights));
             }
             document.getElementById('weight-input').value = '';
@@ -489,12 +496,47 @@
             renderWeightTracker();
         }
 
+        // Render Weight Tracker with SVG Chart
         function renderWeightTracker() {
             const listEl = document.getElementById('weight-history-list');
-            const weights = activeWeightTab === 'gary' ? garyWeights : inesWeights;
+            const chartContainer = document.getElementById('weight-chart-container');
+            const weights = activeWeightTab === 'gary' ? [...garyWeights].reverse() : [...inesWeights].reverse();
+            const rawWeights = activeWeightTab === 'gary' ? garyWeights : inesWeights;
             
             document.getElementById('gary-steps-val').textContent = `${dailySteps.gary} steps`;
             document.getElementById('ines-steps-val').textContent = `${dailySteps.ines} steps`;
+
+            // Draw SVG Chart if data exists
+            if (rawWeights.length > 0) {
+                const maxW = Math.max(...rawWeights.map(w => w.weight)) + 2;
+                const minW = Math.max(0, Math.min(...rawWeights.map(w => w.weight)) - 2);
+                const rangeW = maxW - minW || 1;
+                
+                let svgHTML = `<svg class="w-full h-full overflow-visible" viewBox="0 0 280 110">`;
+                let points = [];
+                
+                rawWeights.forEach((w, idx) => {
+                    const x = 20 + (idx / (Math.max(1, rawWeights.length - 1))) * 240;
+                    const y = 100 - ((w.weight - minW) / rangeW) * 85;
+                    points.push(`${x},${y}`);
+                });
+
+                if (points.length > 1) {
+                    svgHTML += `<polyline fill="none" stroke="${activeWeightTab === 'gary' ? '#22d3ee' : '#c084fc'}" stroke-width="2.5" points="${points.join(' ')}"/>`;
+                }
+
+                rawWeights.forEach((w, idx) => {
+                    const x = 20 + (idx / (Math.max(1, rawWeights.length - 1))) * 240;
+                    const y = 100 - ((w.weight - minW) / rangeW) * 85;
+                    svgHTML += `<circle cx="${x}" cy="${y}" r="4" fill="${activeWeightTab === 'gary' ? '#22d3ee' : '#c084fc'}"/>`;
+                    svgHTML += `<text x="${x}" y="${y - 8}" font-size="9" fill="#94a3b8" text-anchor="middle">${w.weight}</text>`;
+                });
+
+                svgHTML += `</svg>`;
+                chartContainer.innerHTML = svgHTML;
+            } else {
+                chartContainer.innerHTML = `<span class="text-slate-500 text-[10px] self-center">No data points logged yet</span>`;
+            }
 
             listEl.innerHTML = weights.length === 0 ? `<div class="text-slate-500 text-center py-4">No weight records yet</div>` : '';
             weights.forEach(w => {
@@ -909,11 +951,27 @@
                 
                 let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
                 
-                if (speedKmh > 1) {
-                    const stepCount = Math.round(calculateDistance(lastLat || lat, lastLng || lng, lat, lng) * 1.3);
-                    if(!IS_INES_PHONE) dailySteps.gary += stepCount;
-                    else dailySteps.ines += stepCount;
-                    localStorage.setItem('spotmegk_steps', JSON.stringify(dailySteps));
+                // WALKING FILTER: Only count steps if speed is between 2.5 km/h and 6.5 km/h (Walking/Hiking pace)
+                if (speedKmh >= 2.5 && speedKmh <= 6.5) {
+                    if (lastLat && lastLng) {
+                        const distanceMeters = calculateDistance(lastLat, lastLng, lat, lng);
+                        const strideLengthMeters = 0.75; 
+                        const stepsWalked = Math.round(distanceMeters / strideLengthMeters);
+                        
+                        if (stepsWalked > 0 && stepsWalked < 200) {
+                            if (!IS_INES_PHONE) {
+                                dailySteps.gary += stepsWalked;
+                            } else {
+                                dailySteps.ines += stepsWalked;
+                            }
+                            localStorage.setItem('spotmegk_steps', JSON.stringify(dailySteps));
+                            
+                            const garyStepsEl = document.getElementById('gary-steps-val');
+                            const inesStepsEl = document.getElementById('ines-steps-val');
+                            if (garyStepsEl) garyStepsEl.textContent = `${dailySteps.gary} steps`;
+                            if (inesStepsEl) inesStepsEl.textContent = `${dailySteps.ines} steps`;
+                        }
+                    }
                 }
 
                 if (isWorkoutActive && !isWorkoutPaused) {
