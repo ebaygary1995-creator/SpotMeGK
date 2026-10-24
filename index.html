@@ -78,9 +78,10 @@
         </div>
     </div>
 
-    <!-- Alert Banner -->
-    <div id="alert-banner" class="hidden bg-pink-600 text-white text-xs font-bold py-1 px-4 text-center z-30 animate-pulse">
-        📢 <span id="alert-text">Status update</span>
+    <!-- Alert Banner with Close Button -->
+    <div id="alert-banner" class="hidden bg-pink-600 text-white text-xs font-bold py-1.5 px-4 text-center z-30 flex items-center justify-center gap-3 shadow-lg">
+        <span>📢 <span id="alert-text">Status update</span></span>
+        <button onclick="dismissAlertBanner()" class="bg-pink-800 hover:bg-pink-900 text-white px-2 py-0.5 rounded text-[11px] font-extrabold">&times; Close</button>
     </div>
 
     <!-- Workspace Container -->
@@ -339,6 +340,23 @@
             return null;
         }
 
+        let alertDismissTimer = null;
+        function showAlertBanner(msg) {
+            alertText.textContent = msg;
+            alertBanner.classList.remove('hidden');
+            if(alertDismissTimer) clearTimeout(alertDismissTimer);
+            // Auto hide after 5 seconds
+            alertDismissTimer = setTimeout(() => {
+                alertBanner.classList.add('hidden');
+            }, 5000);
+        }
+
+        window.dismissAlertBanner = function() {
+            hapticFeedback();
+            if(alertDismissTimer) clearTimeout(alertDismissTimer);
+            alertBanner.classList.add('hidden');
+        }
+
         window.exportDataToDrive = function() {
             hapticFeedback();
             const backupData = { favorites: savedFavorites, safeZone, chat: chatHistory, garyWorkouts, inesWorkouts, garyWeights, inesWeights, exportDate: new Date().toISOString() };
@@ -473,7 +491,7 @@
 
             const entry = { id: Date.now(), date: new Date().toLocaleDateString(), weight: val };
             if(user === 'gary') {
-                garyWeights.push(entry); // Push chronological
+                garyWeights.push(entry);
                 localStorage.setItem('spotmegk_weights_gary', JSON.stringify(garyWeights));
             } else {
                 inesWeights.push(entry);
@@ -496,7 +514,6 @@
             renderWeightTracker();
         }
 
-        // Render Weight Tracker with SVG Chart
         function renderWeightTracker() {
             const listEl = document.getElementById('weight-history-list');
             const chartContainer = document.getElementById('weight-chart-container');
@@ -506,7 +523,6 @@
             document.getElementById('gary-steps-val').textContent = `${dailySteps.gary} steps`;
             document.getElementById('ines-steps-val').textContent = `${dailySteps.ines} steps`;
 
-            // Draw SVG Chart if data exists
             if (rawWeights.length > 0) {
                 const maxW = Math.max(...rawWeights.map(w => w.weight)) + 2;
                 const minW = Math.max(0, Math.min(...rawWeights.map(w => w.weight)) - 2);
@@ -748,7 +764,7 @@
             const encryptedAlert = encryptData(statusMsg, currentPin);
             localStorage.setItem(`tracker_${currentRoom}_alert`, encryptedAlert);
             playChime();
-            alert("Broadcasted: " + statusMsg);
+            showAlertBanner(`${myName} status: ${statusMsg}`);
         }
 
         let lastCheckedAlertTime = null;
@@ -759,8 +775,7 @@
                 const decryptedJson = decryptData(rawAlert, currentPin);
                 if(decryptedJson && decryptedJson !== lastCheckedAlertTime) {
                     lastCheckedAlertTime = decryptedJson;
-                    alertText.textContent = `${partnerName} status: ${decryptedJson}`;
-                    alertBanner.classList.remove('hidden');
+                    showAlertBanner(`${partnerName} status: ${decryptedJson}`);
                     playChime();
                 }
             }
@@ -951,7 +966,6 @@
                 
                 let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
                 
-                // WALKING FILTER: Only count steps if speed is between 2.5 km/h and 6.5 km/h (Walking/Hiking pace)
                 if (speedKmh >= 2.5 && speedKmh <= 6.5) {
                     if (lastLat && lastLng) {
                         const distanceMeters = calculateDistance(lastLat, lastLng, lat, lng);
