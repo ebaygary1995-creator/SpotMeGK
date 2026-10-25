@@ -34,7 +34,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
-    <!-- Profile Login Modal (Shown if profile not set) -->
+    <!-- Profile Login Modal -->
     <div id="profile-modal" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4">
             <h2 class="text-lg font-bold text-pink-400">👤 Who is using this device?</h2>
@@ -271,7 +271,7 @@
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
         <button id="park-car-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🚗 Park</button>
         <button id="set-geofence" class="bg-teal-600 hover:bg-teal-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🛡️ Zone</button>
-        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
+        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
         <div class="text-[9px] sm:text-[10px] text-slate-400 flex flex-col border-l border-slate-700 pl-2 whitespace-nowrap">
             <span>Spd: <strong id="speed-val" class="text-emerald-400">0k/h</strong></span>
             <span>Climb: <strong id="climb-val" class="text-sky-400">0m</strong></span>
@@ -284,7 +284,6 @@
         const GARY_PHONE = "+353858086112";
         const INES_PHONE = "+353873871437";
 
-        // Profile System State Initialization
         let activeProfile = localStorage.getItem('spotmegk_profile') || null;
         if (!activeProfile) {
             document.getElementById('profile-modal').classList.remove('hidden');
@@ -1148,3 +1147,34 @@
                     recordDailyLog(d, elevationGain, topSpeed);
                 }
                 lastLat = lat; lastLng = lng;
+
+                speedValEl.textContent = `${speedKmh}k/h`;
+                climbValEl.textContent = `${Math.round(elevationGain)}m`;
+
+                if (safeZone) {
+                    const distToSafeZone = calculateDistance(lat, lng, safeZone.lat, safeZone.lng);
+                    if (distToSafeZone <= safeZone.radius && (!window.wasInSafeZone)) {
+                        window.wasInSafeZone = true;
+                        sendCheckIn(`Arrived safely at ${safeZone.name}!`);
+                    } else if (distToSafeZone > safeZone.radius + 50) {
+                        window.wasInSafeZone = false;
+                    }
+                }
+
+                if (!myMarker) {
+                    myMarker = L.marker([lat, lng], { icon: getMarkerIcon(speedKmh) }).addTo(map).bindPopup("You");
+                    map.setView([lat, lng], 15);
+                    fetchWeather(lat, lng);
+                } else {
+                    myMarker.setLatLng([lat, lng]);
+                    myMarker.setIcon(getMarkerIcon(speedKmh));
+                }
+                syncLocationData(lat, lng, acc, speedKmh);
+            }, (err) => {
+                console.log("Waiting for GPS signal...");
+            }, options);
+        }
+        startTracking();
+    </script>
+</body>
+</html>
