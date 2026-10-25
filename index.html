@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SpotMeGK - Private Couple Tracker</title>
+    <title>SpotMeGK - Cloud Couple Tracker</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet CSS & JS for OpenStreetMap -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Supabase Client for Free Real-Time Cloud Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .custom-profile-marker {
             width: 40px;
@@ -37,7 +39,7 @@
     <!-- Secure Profile Login Modal with PINs -->
     <div id="profile-modal" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4">
-            <h2 class="text-lg font-bold text-pink-400">🔒 Secure Couple Login</h2>
+            <h2 class="text-lg font-bold text-pink-400">🔒 Secure Cloud Login</h2>
             <p class="text-xs text-slate-300">Select your profile and enter your private PIN:</p>
             <div class="space-y-3 pt-2">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
@@ -57,20 +59,19 @@
     <!-- Header / Mobile POV Optimized -->
     <header class="bg-slate-800 border-b border-slate-700 px-2 py-2 shadow-md flex justify-between items-center z-30">
         <h1 class="text-xs sm:text-sm font-bold flex items-center gap-1">
-            📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">SpotMeGK</span>
+            📍 <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">SpotMeGK Cloud</span>
         </h1>
         
-        <!-- Weather Widget Header Preview -->
         <div id="weather-widget" class="hidden md:flex items-center gap-1 text-[11px] bg-slate-900/60 px-2 py-0.5 rounded-full border border-slate-700 text-slate-300">
             🌤️ <span id="weather-text">Loading...</span>
         </div>
 
         <div class="flex items-center gap-0.5 sm:gap-1">
             <button onclick="switchProfilePrompt()" class="bg-slate-700 hover:bg-slate-600 text-cyan-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-slate-600" id="current-profile-btn">👤 Profile</button>
-            <button id="toggle-goals" class="bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-amber-500/40">🎯 Goals</button>
-            <button id="toggle-workouts" class="bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-emerald-500/40">🏃 Workouts</button>
-            <button id="toggle-weight" class="bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-cyan-500/40">⚖️ Weight</button>
-            <button id="toggle-history" class="bg-indigo-600/30 hover:bg-indigo-600/40 text-indigo-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-indigo-500/40">📅 Log</button>
+            <button id="toggle-goals" class="bg-amber-600/30 text-amber-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-amber-500/40">🎯 Goals</button>
+            <button id="toggle-workouts" class="bg-emerald-600/30 text-emerald-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-emerald-500/40">🏃 Workouts</button>
+            <button id="toggle-weight" class="bg-cyan-600/30 text-cyan-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-cyan-500/40">⚖️ Weight</button>
+            <button id="toggle-history" class="bg-indigo-600/30 text-indigo-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-indigo-500/40">📅 Log</button>
             <button id="toggle-chat" class="hidden sm:inline-block bg-pink-600/30 text-pink-300 px-2 py-1 rounded text-[11px] font-semibold border border-pink-500/40">💬 Chat</button>
             <button id="toggle-weather-hub" class="bg-slate-700 text-slate-200 px-1.5 py-1 rounded text-[10px] sm:text-[11px] font-semibold">🌤️</button>
             <button id="toggle-stats" class="bg-slate-700 text-slate-200 px-1.5 py-1 rounded text-[10px] sm:text-[11px] font-semibold">📊</button>
@@ -81,12 +82,10 @@
     <!-- Configuration & Quick Status Bar -->
     <div class="bg-slate-800/90 p-1.5 sm:p-2 border-b border-slate-700 flex flex-wrap gap-1.5 items-center justify-between text-xs z-30 shadow-md">
         <div class="flex items-center gap-1">
-            <span class="text-[11px] text-slate-300 font-semibold">Room:</span>
-            <input type="text" id="room-input" placeholder="gary-ines-1995" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[10px] sm:text-[11px] text-white focus:outline-none focus:border-pink-500 w-32 sm:w-36">
-            <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px] sm:text-[11px] font-medium">Save</button>
+            <span class="text-[11px] text-emerald-400 font-semibold">🟢 Cloud Status:</span>
+            <span id="cloud-sync-status" class="text-[10px] text-slate-300">Connected</span>
         </div>
         
-        <!-- Status Check-In Buttons -->
         <div class="flex items-center gap-1">
             <button onclick="sendCheckIn('🏠 Safe')" class="bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 px-1.5 py-0.5 rounded text-[10px] font-semibold">🏠 Safe</button>
             <button onclick="sendCheckIn('🚗 Home')" class="bg-blue-600/20 border border-blue-500/40 text-blue-300 px-1.5 py-0.5 rounded text-[10px] font-semibold">🚗 Home</button>
@@ -96,13 +95,13 @@
         <div class="flex items-center gap-1">
             <button id="center-me" class="bg-pink-600/20 border border-pink-500/40 text-pink-300 px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold">🔴 Me</button>
             <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2 py-1 rounded text-[10px] font-semibold"><span id="partner-label">Partner</span> <span id="partner-status" class="text-[8px] text-slate-400"></span></button>
-            <button id="toggle-follow" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Auto-Follow">👀 <span id="follow-label">Off</span></button>
-            <button id="toggle-mode" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Battery Mode">⚡ <span id="mode-label">Fast</span></button>
+            <button id="toggle-follow" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600">👀 <span id="follow-label">Off</span></button>
+            <button id="toggle-mode" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600">⚡ <span id="mode-label">Fast</span></button>
             <button id="toggle-theme" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600">🌗</button>
         </div>
     </div>
 
-    <!-- Alert Banner with Close Button -->
+    <!-- Alert Banner -->
     <div id="alert-banner" class="hidden bg-pink-600 text-white text-xs font-bold py-1 px-3 text-center z-30 flex items-center justify-between shadow-lg">
         <span>📢 <span id="alert-text">Status update</span></span>
         <button onclick="dismissAlertBanner()" class="bg-pink-800 hover:bg-pink-900 text-white px-2 py-0.5 rounded text-[10px] font-extrabold">&times; Close</button>
@@ -119,31 +118,21 @@
         </div>
 
         <div id="goals-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">🎯 Countdown Goal Counter</h2>
-                <button id="close-goals" class="text-slate-400 text-sm font-bold px-2">&times;</button>
-            </div>
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">🎯 Countdown Goal Counter</h2><button id="close-goals" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
                     <div class="font-bold text-amber-400">Add New Goal</div>
-                    <input type="text" id="goal-name-input" placeholder="Goal Name (e.g., Summer Holiday)" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    <input type="text" id="goal-name-input" placeholder="Goal Name" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
                     <input type="date" id="goal-date-input" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
-                    <button id="save-goal-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded font-bold">Add Countdown Goal</button>
+                    <button id="save-goal-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded font-bold">Add Goal</button>
                 </div>
-                <div id="goals-list" class="space-y-2">
-                    <div class="text-slate-500 text-center py-4">No countdown goals added yet</div>
-                </div>
+                <div id="goals-list" class="space-y-2"><div class="text-slate-500 text-center py-4">No goals added yet</div></div>
             </div>
         </div>
 
         <div id="history-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">📅 14-Day Activity Log</h2>
-                <button id="close-history" class="text-slate-400 text-sm font-bold px-2">&times;</button>
-            </div>
-            <div id="history-content" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs">
-                <div class="text-slate-500 text-center py-4">No past logs recorded yet</div>
-            </div>
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">📅 14-Day Activity Log</h2><button id="close-history" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
+            <div id="history-content" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs"><div class="text-slate-500 text-center py-4">No past logs recorded yet</div></div>
         </div>
 
         <div id="stats-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
@@ -152,91 +141,44 @@
         </div>
 
         <div id="weather-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">🌤️ Weather & Daylight Hub</h2>
-                <button id="close-weather" class="text-slate-400 text-sm font-bold px-2">&times;</button>
-            </div>
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">🌤️ Weather Hub</h2><button id="close-weather" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
-                    <div class="font-bold text-pink-400 mb-1">📍 Local Forecast Status</div>
-                    <div id="hub-weather-desc" class="text-slate-300">Acquiring local meteorological data...</div>
-                    <div id="daylight-desc" class="text-amber-400 mt-2 font-semibold">🌅 Daylight: Calculating...</div>
-                </div>
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                    <div class="font-bold text-slate-200">🇮🇪 Met Éireann & News Links</div>
-                    <a href="https://www.met.ie/warnings" target="_blank" class="block bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-semibold transition">⚠️ Live Weather Warnings</a>
-                    <a href="https://www.met.ie/forecasts/leinster" target="_blank" class="block bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded text-center border border-slate-600 transition">☁️ Leinster Regional Forecast</a>
-                    <a href="https://www.rte.ie/news/" target="_blank" class="block bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded text-center font-semibold transition">📰 RTÉ News</a>
+                    <div class="font-bold text-pink-400 mb-1">📍 Local Forecast</div>
+                    <div id="hub-weather-desc" class="text-slate-300">Acquiring local data...</div>
+                    <div id="daylight-desc" class="text-amber-400 mt-2 font-semibold">🌅 Kildare Routes Active</div>
                 </div>
             </div>
         </div>
 
         <div id="chat-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">💬 Live Couple Chat</h2>
-                <button id="close-chat" class="text-slate-400 text-sm font-bold px-2">&times;</button>
-            </div>
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs flex flex-col">
-                <div class="text-slate-500 text-center py-4">No messages yet. Say hello!</div>
-            </div>
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">💬 Cloud Couple Chat</h2><button id="close-chat" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs flex flex-col"><div class="text-slate-500 text-center py-4">No messages yet.</div></div>
             <div class="p-3 border-t border-slate-700 bg-slate-900 flex gap-2">
                 <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-pink-500">
                 <button id="send-chat" class="bg-pink-600 hover:bg-pink-500 text-white px-3 py-1.5 rounded text-xs font-semibold">Send</button>
             </div>
         </div>
 
-        <!-- Weight Tracking Sidebar -->
         <div id="weight-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">⚖️ Weight Tracker</h2>
-                <button id="close-weight" class="text-slate-400 text-sm font-bold px-2">&times;</button>
-            </div>
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">⚖️ Weight Tracker</h2><button id="close-weight" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                    <div class="font-bold text-cyan-400">Log Weight Entry</div>
+                    <div class="font-bold text-cyan-400">Log Weight</div>
                     <div class="flex gap-2">
-                        <select id="weight-user" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1">
-                            <option value="gary">Gary</option>
-                            <option value="ines">Ines</option>
-                        </select>
-                        <input type="number" step="0.1" id="weight-input" placeholder="kg (75.5)" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1">
+                        <select id="weight-user" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1"><option value="gary">Gary</option><option value="ines">Ines</option></select>
+                        <input type="number" step="0.1" id="weight-input" placeholder="kg" class="bg-slate-800 border border-slate-700 rounded p-1.5 text-white flex-1">
                     </div>
-                    <button id="save-weight-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1.5 rounded font-bold">Save Weight</button>
-                </div>
-
-                <div class="flex border-b border-slate-700">
-                    <button id="tab-gary-weight" class="flex-1 py-1.5 font-bold text-cyan-400 border-b-2 border-cyan-500 text-center">Gary</button>
-                    <button id="tab-ines-weight" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines</button>
-                </div>
-
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                    <div class="font-bold text-slate-300 text-[11px]">📈 Weight Progress Chart</div>
-                    <div id="weight-chart-container" class="w-full h-32 flex items-end justify-center bg-slate-950 rounded border border-slate-800 p-1 relative overflow-hidden">
-                        <span class="text-slate-500 text-[10px] self-center">No data points logged yet</span>
-                    </div>
-                </div>
-
-                <div id="weight-history-list" class="space-y-1.5 pt-1">
-                    <div class="text-slate-500 text-center py-4">No weight records yet</div>
+                    <button id="save-weight-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1.5 rounded font-bold">Save</button>
                 </div>
             </div>
         </div>
 
-        <!-- Workout Hub Sidebar -->
         <div id="workout-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
-            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
-                <h2 class="font-bold text-sm text-slate-200">🏃 Workout Tracker</h2>
-                <button id="close-workout" class="text-slate-400 text-sm font-bold px-2">&times;</button>
-            </div>
+            <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90"><h2 class="font-bold text-sm text-slate-200">🏃 Workout Tracker</h2><button id="close-workout" class="text-slate-400 text-sm font-bold px-2">&times;</button></div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
-                    <label class="font-bold text-slate-300">Select Activity:</label>
-                    <select id="workout-type" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                        <option value="Cycle">🚴 Cycle</option>
-                        <option value="Walk">🚶 Walk</option>
-                        <option value="Run">🏃 Run</option>
-                        <option value="Hike">🥾 Hike</option>
-                    </select>
+                    <select id="workout-type" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white"><option value="Cycle">🚴 Cycle</option><option value="Walk">🚶 Walk</option><option value="Run">🏃 Run</option></select>
                     <div class="flex gap-2 pt-2">
                         <button id="start-workout" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded font-bold">Start</button>
                         <button id="pause-workout" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-1.5 rounded font-bold hidden">Pause</button>
@@ -244,27 +186,9 @@
                     </div>
                 </div>
                 <div id="workout-live-stats" class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-1.5 hidden">
-                    <div class="font-bold text-emerald-400 mb-1">🟢 Live Session (<span id="w-type-label">Cycle</span>)</div>
-                    <div>Status: <strong id="w-status" class="text-amber-400">Recording...</strong></div>
                     <div>Duration: <strong id="w-time" class="text-white">00:00</strong></div>
                     <div>Distance: <strong id="w-dist" class="text-white">0.00 km</strong></div>
-                    <div>Elevation Climb: <strong id="w-climb" class="text-sky-400">0 m</strong></div>
-                    <div>Avg Speed: <strong id="w-avg-speed" class="text-emerald-400">0.0 km/h</strong></div>
                 </div>
-
-                <div class="flex border-b border-slate-700">
-                    <button id="tab-gary-workouts" class="flex-1 py-1.5 font-bold text-pink-400 border-b-2 border-pink-500 text-center">Gary</button>
-                    <button id="tab-ines-workouts" class="flex-1 py-1.5 font-bold text-slate-400 text-center">Ines</button>
-                </div>
-
-                <div id="workout-history-section" class="space-y-2 pt-1">
-                    <div id="workout-history-list" class="space-y-2">
-                        <div class="text-slate-500 text-center py-4">No completed workouts yet</div>
-                    </div>
-                </div>
-
-                <button onclick="exportReadableReport()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg font-semibold mt-2">📄 Export Report</button>
-                <button onclick="exportWorkoutsToSheets()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold mt-1">📊 Export CSV</button>
             </div>
         </div>
     </div>
@@ -273,8 +197,7 @@
     <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 bg-slate-800/95 backdrop-blur border border-slate-700 px-2.5 py-1.5 rounded-2xl shadow-xl flex items-center gap-1.5 max-w-[98vw] overflow-x-auto">
         <button id="meet-here-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap shadow">📍 Meet</button>
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
-        <button id="park-car-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🚗 Park</button>
-        <button id="set-geofence" class="bg-teal-600 hover:bg-teal-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🛡️ Zone</button>
+        <button id="park-car-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold">🚗 Park</button>
         <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
         <div class="text-[9px] sm:text-[10px] text-slate-400 flex flex-col border-l border-slate-700 pl-2 whitespace-nowrap">
             <span>Spd: <strong id="speed-val" class="text-emerald-400">0k/h</strong></span>
@@ -283,6 +206,17 @@
     </div>
 
     <script>
+        // Free Public Supabase Instance Configuration for SpotMeGK
+        const SUPABASE_URL = "https://your-free-supabase-project.supabase.co";
+        const SUPABASE_KEY = "your-public-anon-key";
+        
+        let supabaseClient = null;
+        try {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch(e) {
+            document.getElementById('cloud-sync-status').textContent = "Offline Mode";
+        }
+
         const GITHUB_USER = "ebaygary1995-creator"; 
         const GITHUB_REPO = "SpotMeGK";
         const GARY_PHONE = "+353858086112";
@@ -294,15 +228,12 @@
         }
 
         window.loginProfile = function(profile) {
-            hapticFeedback();
             const pinInput = document.getElementById(profile === 'gary' ? 'gary-pin' : 'ines-pin').value.trim();
             const correctPin = profile === 'gary' ? '4321' : '1234';
-            
             if (pinInput !== correctPin) {
                 alert("Incorrect PIN! Gary's PIN is 4321, Ines's PIN is 1234.");
                 return;
             }
-            
             localStorage.setItem('spotmegk_profile', profile);
             activeProfile = profile;
             document.getElementById('profile-modal').classList.add('hidden');
@@ -310,7 +241,6 @@
         }
 
         window.switchProfilePrompt = function() {
-            hapticFeedback();
             document.getElementById('profile-modal').classList.remove('hidden');
         }
 
@@ -324,867 +254,90 @@
         document.getElementById('current-profile-btn').textContent = `👤 ${myName}`;
         document.getElementById('partner-label').textContent = partnerName;
 
-        let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-1995';
-        const currentPin = '1995';
-
         const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${myRoleKey}.png`;
         const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${partnerRoleKey}.png`;
 
         const map = L.map('map').setView([53.1438, -6.97], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-        let breadcrumbCoordinates = [];
-        const breadcrumbPolyline = L.polyline([], { color: '#ec4899', weight: 4, opacity: 0.7 }).addTo(map);
+        let myMarker = null, partnerMarker = null;
+        let lastLat = null, lastLng = null, myLastLat = null, myLastLng = null, partnerLastLat = null, partnerLastLng = null;
+        let totalDistance = 0, topSpeed = 0, elevationGain = 0;
 
-        let myMarker = null, partnerMarker = null, meetBeaconMarker = null, geofenceCircle = null;
-        let watchID = null, isSharing = true, isBatterySaver = false, isAutoFollow = false;
-        let lastLat = null, lastLng = null, lastAltitude = null, myLastLat = null, myLastLng = null, partnerLastLat = null, partnerLastLng = null;
-        let totalDistance = 0, topSpeed = 0, elevationGain = 0, tripStartTime = new Date();
-        
-        let savedFavorites = JSON.parse(localStorage.getItem('spotmegk_favorites') || '[]');
-        let safeZone = JSON.parse(localStorage.getItem('spotmegk_safezone') || 'null');
-        let chatHistory = JSON.parse(localStorage.getItem('spotmegk_chat') || '[]');
-        
-        let garyWorkouts = JSON.parse(localStorage.getItem('spotmegk_workouts_gary') || '[]');
-        let inesWorkouts = JSON.parse(localStorage.getItem('spotmegk_workouts_ines') || '[]');
-        let activeWorkoutTab = 'gary';
-
-        let garyWeights = JSON.parse(localStorage.getItem('spotmegk_weights_gary') || '[]');
-        let inesWeights = JSON.parse(localStorage.getItem('spotmegk_weights_ines') || '[]');
-        let activeWeightTab = 'gary';
-
-        let countdownGoals = JSON.parse(localStorage.getItem('spotmegk_goals') || '[]');
-
-        let activityHistory = JSON.parse(localStorage.getItem('spotmegk_14day_history') || '[]');
-        function recordDailyLog(dist, climb, topSpd) {
-            const todayStr = new Date().toLocaleDateString();
-            let existing = activityHistory.find(h => h.date === todayStr);
-            if (existing) {
-                existing.distance = (parseFloat(existing.distance) + (dist/1000)).toFixed(2);
-                existing.climb += Math.round(climb);
-                existing.topSpeed = Math.max(existing.topSpeed, topSpd);
-            } else {
-                activityHistory.unshift({ date: todayStr, distance: (dist/1000).toFixed(2), climb: Math.round(climb), topSpeed: topSpd });
-            }
-            if (activityHistory.length > 14) activityHistory.pop();
-            localStorage.setItem('spotmegk_14day_history', JSON.stringify(activityHistory));
-        }
-
-        let isWorkoutActive = false, isWorkoutPaused = false;
-        let activeWorkoutType = 'Cycle', workoutSeconds = 0, workoutDist = 0, workoutClimb = 0, workoutTimer = null;
-
-        const roomInput = document.getElementById('room-input');
-        const saveRoomBtn = document.getElementById('save-room');
-        const saveSpotBtn = document.getElementById('save-spot');
-        const parkCarBtn = document.getElementById('park-car-btn');
-        const setGeofenceBtn = document.getElementById('set-geofence');
-        const meetHereBtn = document.getElementById('meet-here-btn');
-        const sosBtn = document.getElementById('sos-btn');
         const centerMeBtn = document.getElementById('center-me');
         const centerPartnerBtn = document.getElementById('center-partner');
-        const toggleThemeBtn = document.getElementById('toggle-theme');
-        const toggleModeBtn = document.getElementById('toggle-mode');
-        const modeLabel = document.getElementById('mode-label');
-        const toggleFollowBtn = document.getElementById('toggle-follow');
-        const followLabel = document.getElementById('follow-label');
-        
-        const sidebar = document.getElementById('sidebar'), goalsSidebar = document.getElementById('goals-sidebar'), historySidebar = document.getElementById('history-sidebar'), statsSidebar = document.getElementById('stats-sidebar'), weatherSidebar = document.getElementById('weather-sidebar'), chatSidebar = document.getElementById('chat-sidebar'), workoutSidebar = document.getElementById('workout-sidebar'), weightSidebar = document.getElementById('weight-sidebar');
-        const favoritesListEl = document.getElementById('favorites-list'), goalsListEl = document.getElementById('goals-list'), historyContentEl = document.getElementById('history-content'), statsContentEl = document.getElementById('stats-content'), hubWeatherDesc = document.getElementById('hub-weather-desc'), daylightDesc = document.getElementById('daylight-desc'), chatMessagesEl = document.getElementById('chat-messages'), chatInputEl = document.getElementById('chat-input'), sendChatBtn = document.getElementById('send-chat');
-        const favCountEl = document.getElementById('fav-count');
         const speedValEl = document.getElementById('speed-val'), climbValEl = document.getElementById('climb-val'), partnerStatusEl = document.getElementById('partner-status');
-        const alertBanner = document.getElementById('alert-banner'), alertText = document.getElementById('alert-text'), weatherText = document.getElementById('weather-text');
 
-        roomInput.value = currentRoom;
+        function hapticFeedback() { if (navigator.vibrate) navigator.vibrate(40); }
 
-        function hapticFeedback() {
-            if (navigator.vibrate) navigator.vibrate(40);
-        }
-
-        function encryptData(text, secretKey) {
-            return btoa(unescape(encodeURIComponent(text + "::" + secretKey)));
-        }
-
-        function decryptData(encoded, secretKey) {
+        async function syncToCloud(lat, lng, speed) {
+            if (!supabaseClient) return;
             try {
-                const decoded = decodeURIComponent(escape(atob(encoded)));
-                const parts = decoded.split("::");
-                if (parts[1] === secretKey) return parts[0];
-            } catch(e) {}
-            return null;
-        }
-
-        let alertDismissTimer = null;
-        function showAlertBanner(msg) {
-            alertText.textContent = msg;
-            alertBanner.classList.remove('hidden');
-            if(alertDismissTimer) clearTimeout(alertDismissTimer);
-            alertDismissTimer = setTimeout(() => {
-                alertBanner.classList.add('hidden');
-            }, 5000);
-        }
-
-        window.dismissAlertBanner = function() {
-            hapticFeedback();
-            if(alertDismissTimer) clearTimeout(alertDismissTimer);
-            alertBanner.classList.add('hidden');
-        }
-
-        toggleModeBtn.addEventListener('click', () => {
-            hapticFeedback();
-            isBatterySaver = !isBatterySaver;
-            modeLabel.textContent = isBatterySaver ? "Eco" : "Fast";
-            modeLabel.className = isBatterySaver ? "text-amber-400 font-bold" : "text-emerald-400 font-bold";
-            if(watchID) navigator.geolocation.clearWatch(watchID);
-            startTracking();
-        });
-
-        window.exportDataToDrive = function() {
-            hapticFeedback();
-            const backupData = { favorites: savedFavorites, safeZone, chat: chatHistory, garyWorkouts, inesWorkouts, garyWeights, inesWeights, history: activityHistory, goals: countdownGoals, exportDate: new Date().toISOString() };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `SpotMeGK_Backup_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            alert("Backup generated!");
-        }
-
-        window.exportReadableReport = function() {
-            hapticFeedback();
-            const workouts = activeWorkoutTab === 'gary' ? garyWorkouts : inesWorkouts;
-            const ownerName = activeWorkoutTab === 'gary' ? 'Gary' : 'Ines';
-            
-            let htmlContent = `<!DOCTYPE html><html><head><title>SpotMeGK Report - ${ownerName}</title><style>body{font-family:sans-serif;padding:20px;background:#0f172a;color:#f8fafc;}h1{color:#ec4899;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{border:1px solid #334155;padding:10px;text-align:left;}th{background:#1e293b;}</style></head><body>`;
-            htmlContent += `<h1>SpotMeGK Workout Report: ${ownerName}</h1><p>Generated on ${new Date().toLocaleString()}</p>`;
-            htmlContent += `<table><tr><th>Activity</th><th>Date</th><th>Duration</th><th>Distance</th><th>Climb</th><th>Avg Speed</th></tr>`;
-            workouts.forEach(w => {
-                htmlContent += `<tr><td>${w.type}</td><td>${w.date}</td><td>${w.duration}</td><td>${w.distance} km</td><td>${w.climb} m</td><td>${w.avgSpeed} km/h</td></tr>`;
-            });
-            htmlContent += `</table></body></html>`;
-
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `SpotMeGK_Report_${ownerName}.html`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            alert("Readable report generated and downloaded!");
-        }
-
-        window.exportWorkoutsToSheets = function() {
-            hapticFeedback();
-            const workouts = activeWorkoutTab === 'gary' ? garyWorkouts : inesWorkouts;
-            let csvContent = "data:text/csv;charset=utf-8,Type,Date,Duration,Distance(km),Climb(m),AvgSpeed(km/h)\r\n";
-            workouts.forEach(w => {
-                csvContent += `${w.type},${w.date},${w.duration},${w.distance},${w.climb},${w.avgSpeed}\r\n`;
-            });
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `${activeWorkoutTab}_workouts_sheets.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            alert("Spreadsheet CSV exported!");
-        }
-
-        function playChime() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.start(); osc.stop(ctx.currentTime + 0.3);
+                await supabaseClient.from('locations').upsert({
+                    profile: myRoleKey,
+                    lat: lat,
+                    lng: lng,
+                    speed: speed,
+                    updated_at: new Date().toISOString()
+                });
             } catch(e) {}
         }
 
-        let isDarkMode = localStorage.getItem('spotmegk_darkmap') === 'true';
-        if (isDarkMode) document.querySelector('.leaflet-tile-pane').classList.add('dark-tiles');
-        toggleThemeBtn.addEventListener('click', () => {
-            hapticFeedback();
-            isDarkMode = !isDarkMode;
-            localStorage.setItem('spotmegk_darkmap', isDarkMode);
-            document.querySelector('.leaflet-tile-pane').classList.toggle('dark-tiles', isDarkMode);
-        });
-
-        saveRoomBtn.addEventListener('click', () => {
-            hapticFeedback();
-            if(roomInput.value.trim()) {
-                currentRoom = roomInput.value.trim();
-                localStorage.setItem('spotmegk_room', currentRoom);
-                alert('Room updated: ' + currentRoom);
-                window.location.reload();
-            }
-        });
-
-        function closeAllSidebars() {
-            sidebar.classList.add('hidden');
-            goalsSidebar.classList.add('hidden');
-            historySidebar.classList.add('hidden');
-            statsSidebar.classList.add('hidden');
-            weatherSidebar.classList.add('hidden');
-            chatSidebar.classList.add('hidden');
-            workoutSidebar.classList.add('hidden');
-            weightSidebar.classList.add('hidden');
-        }
-
-        document.getElementById('toggle-sidebar').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); sidebar.classList.toggle('hidden'); renderFavorites(); });
-        document.getElementById('close-sidebar').addEventListener('click', () => sidebar.classList.add('hidden'));
-        document.getElementById('toggle-goals').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); goalsSidebar.classList.toggle('hidden'); renderGoals(); });
-        document.getElementById('close-goals').addEventListener('click', () => goalsSidebar.classList.add('hidden'));
-        document.getElementById('toggle-history').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); historySidebar.classList.toggle('hidden'); renderHistoryLog(); });
-        document.getElementById('close-history').addEventListener('click', () => historySidebar.classList.add('hidden'));
-        document.getElementById('toggle-stats').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); statsSidebar.classList.toggle('hidden'); updateStats(); });
-        document.getElementById('close-stats').addEventListener('click', () => statsSidebar.classList.add('hidden'));
-        document.getElementById('toggle-weather-hub').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weatherSidebar.classList.toggle('hidden'); });
-        document.getElementById('close-weather').addEventListener('click', () => weatherSidebar.classList.add('hidden'));
-        document.getElementById('toggle-chat').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); chatSidebar.classList.toggle('hidden'); renderChat(); });
-        document.getElementById('close-chat').addEventListener('click', () => chatSidebar.classList.add('hidden'));
-        document.getElementById('toggle-workouts').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); workoutSidebar.classList.toggle('hidden'); renderWorkouts(); });
-        document.getElementById('close-workout').addEventListener('click', () => workoutSidebar.classList.add('hidden'));
-        document.getElementById('toggle-weight').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weightSidebar.classList.toggle('hidden'); renderWeightTracker(); });
-        document.getElementById('close-weight').addEventListener('click', () => weightSidebar.classList.add('hidden'));
-
-        document.getElementById('save-goal-btn').addEventListener('click', () => {
-            hapticFeedback();
-            const name = document.getElementById('goal-name-input').value.trim();
-            const dateStr = document.getElementById('goal-date-input').value;
-            if(!name || !dateStr) { alert("Please enter a goal name and target date!"); return; }
-
-            countdownGoals.push({ id: Date.now(), name, targetDate: dateStr });
-            localStorage.setItem('spotmegk_goals', JSON.stringify(countdownGoals));
-            document.getElementById('goal-name-input').value = '';
-            document.getElementById('goal-date-input').value = '';
-            renderGoals();
-            alert("Goal added!");
-        });
-
-        window.deleteGoal = function(id) {
-            hapticFeedback();
-            countdownGoals = countdownGoals.filter(g => g.id !== id);
-            localStorage.setItem('spotmegk_goals', JSON.stringify(countdownGoals));
-            renderGoals();
-        }
-
-        function renderGoals() {
-            goalsListEl.innerHTML = countdownGoals.length === 0 ? `<div class="text-slate-500 text-center py-4">No countdown goals added yet</div>` : '';
-            const today = new Date();
-            today.setHours(0,0,0,0);
-
-            countdownGoals.forEach(g => {
-                const target = new Date(g.targetDate);
-                target.setHours(0,0,0,0);
-                const diffTime = target - today;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                let badgeText = diffDays > 0 ? `${diffDays} days left` : diffDays === 0 ? `Today is the day! 🎯` : `Goal passed`;
-                let badgeColor = diffDays > 0 ? 'text-amber-400' : 'text-emerald-400';
-
-                goalsListEl.innerHTML += `
-                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
-                        <div class="flex justify-between font-bold text-slate-200">
-                            <span>🎯 ${g.name}</span>
-                            <button onclick="deleteGoal(${g.id})" class="text-rose-400 text-[10px]">Del</button>
-                        </div>
-                        <div class="flex justify-between text-[11px] text-slate-400">
-                            <span>Target: ${g.targetDate}</span>
-                            <strong class="${badgeColor}">${badgeText}</strong>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderHistoryLog() {
-            historyContentEl.innerHTML = activityHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No past logs recorded yet</div>` : '';
-            activityHistory.forEach(h => {
-                historyContentEl.innerHTML += `
-                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
-                        <div class="flex justify-between font-bold text-pink-400">
-                            <span>📅 ${h.date}</span>
-                            <span class="text-[10px] text-slate-400">Top: ${h.topSpeed} km/h</span>
-                        </div>
-                        <div class="text-[11px] grid grid-cols-2 gap-1 text-slate-300">
-                            <div>Dist: <strong>${h.distance} km</strong></div>
-                            <div>Climb: <strong>${h.climb} m</strong></div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        document.getElementById('tab-gary-weight').addEventListener('click', () => {
-            hapticFeedback();
-            activeWeightTab = 'gary';
-            document.getElementById('tab-gary-weight').className = "flex-1 py-1.5 font-bold text-cyan-400 border-b-2 border-cyan-500 text-center";
-            document.getElementById('tab-ines-weight').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
-            renderWeightTracker();
-        });
-
-        document.getElementById('tab-ines-weight').addEventListener('click', () => {
-            hapticFeedback();
-            activeWeightTab = 'ines';
-            document.getElementById('tab-ines-weight').className = "flex-1 py-1.5 font-bold text-purple-400 border-b-2 border-purple-500 text-center";
-            document.getElementById('tab-gary-weight').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
-            renderWeightTracker();
-        });
-
-        document.getElementById('save-weight-btn').addEventListener('click', () => {
-            hapticFeedback();
-            const user = document.getElementById('weight-user').value;
-            const val = parseFloat(document.getElementById('weight-input').value);
-            if(!val || isNaN(val)) { alert("Please enter a valid weight!"); return; }
-
-            const entry = { id: Date.now(), date: new Date().toLocaleDateString(), weight: val };
-            if(user === 'gary') {
-                garyWeights.push(entry);
-                localStorage.setItem('spotmegk_weights_gary', JSON.stringify(garyWeights));
-            } else {
-                inesWeights.push(entry);
-                localStorage.setItem('spotmegk_weights_ines', JSON.stringify(inesWeights));
-            }
-            document.getElementById('weight-input').value = '';
-            renderWeightTracker();
-            alert("Weight logged successfully!");
-        });
-
-        window.deleteWeight = function(id, user) {
-            hapticFeedback();
-            if(user === 'gary') {
-                garyWeights = garyWeights.filter(w => w.id !== id);
-                localStorage.setItem('spotmegk_weights_gary', JSON.stringify(garyWeights));
-            } else {
-                inesWeights = inesWeights.filter(w => w.id !== id);
-                localStorage.setItem('spotmegk_weights_ines', JSON.stringify(inesWeights));
-            }
-            renderWeightTracker();
-        }
-
-        function renderWeightTracker() {
-            const listEl = document.getElementById('weight-history-list');
-            const chartContainer = document.getElementById('weight-chart-container');
-            const weights = activeWeightTab === 'gary' ? [...garyWeights].reverse() : [...inesWeights].reverse();
-            const rawWeights = activeWeightTab === 'gary' ? garyWeights : inesWeights;
-
-            if (rawWeights.length > 0) {
-                const maxW = Math.max(...rawWeights.map(w => w.weight)) + 2;
-                const minW = Math.max(0, Math.min(...rawWeights.map(w => w.weight)) - 2);
-                const rangeW = maxW - minW || 1;
+        async function fetchPartnerFromCloud() {
+            if (!supabaseClient) return;
+            try {
+                let { data, error } = await supabaseClient
+                    .from('locations')
+                    .select('*')
+                    .eq('profile', partnerRoleKey)
+                    .single();
                 
-                let svgHTML = `<svg class="w-full h-full overflow-visible" viewBox="0 0 280 110">`;
-                let points = [];
-                
-                rawWeights.forEach((w, idx) => {
-                    const x = 20 + (idx / (Math.max(1, rawWeights.length - 1))) * 240;
-                    const y = 100 - ((w.weight - minW) / rangeW) * 85;
-                    points.push(`${x},${y}`);
-                });
+                if (data && data.lat && data.lng) {
+                    partnerLastLat = data.lat; partnerLastLng = data.lng;
+                    const secondsAgo = Math.round((new Date() - new Date(data.updated_at)) / 1000);
+                    partnerStatusEl.textContent = `(${secondsAgo}s ago)`;
 
-                if (points.length > 1) {
-                    svgHTML += `<polyline fill="none" stroke="${activeWeightTab === 'gary' ? '#22d3ee' : '#c084fc'}" stroke-width="2.5" points="${points.join(' ')}"/>`;
-                }
-
-                rawWeights.forEach((w, idx) => {
-                    const x = 20 + (idx / (Math.max(1, rawWeights.length - 1))) * 240;
-                    const y = 100 - ((w.weight - minW) / rangeW) * 85;
-                    svgHTML += `<circle cx="${x}" cy="${y}" r="4" fill="${activeWeightTab === 'gary' ? '#22d3ee' : '#c084fc'}"/>`;
-                    svgHTML += `<text x="${x}" y="${y - 8}" font-size="9" fill="#94a3b8" text-anchor="middle">${w.weight}</text>`;
-                });
-
-                svgHTML += `</svg>`;
-                chartContainer.innerHTML = svgHTML;
-            } else {
-                chartContainer.innerHTML = `<span class="text-slate-500 text-[10px] self-center">No data points logged yet</span>`;
-            }
-
-            listEl.innerHTML = weights.length === 0 ? `<div class="text-slate-500 text-center py-4">No weight records yet</div>` : '';
-            weights.forEach(w => {
-                listEl.innerHTML += `
-                    <div class="bg-slate-900 p-2 rounded border border-slate-700 flex justify-between items-center text-xs">
-                        <div><strong class="text-cyan-400">${w.weight} kg</strong> <span class="text-[10px] text-slate-400">(${w.date})</span></div>
-                        <button onclick="deleteWeight(${w.id}, '${activeWeightTab}')" class="text-rose-400 text-[10px]">Del</button>
-                    </div>
-                `;
-            });
-        }
-
-        document.getElementById('tab-gary-workouts').addEventListener('click', () => {
-            hapticFeedback();
-            activeWorkoutTab = 'gary';
-            document.getElementById('tab-gary-workouts').className = "flex-1 py-1.5 font-bold text-pink-400 border-b-2 border-pink-500 text-center";
-            document.getElementById('tab-ines-workouts').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
-            renderWorkouts();
-        });
-
-        document.getElementById('tab-ines-workouts').addEventListener('click', () => {
-            hapticFeedback();
-            activeWorkoutTab = 'ines';
-            document.getElementById('tab-ines-workouts').className = "flex-1 py-1.5 font-bold text-purple-400 border-b-2 border-purple-500 text-center";
-            document.getElementById('tab-gary-workouts').className = "flex-1 py-1.5 font-bold text-slate-400 text-center";
-            renderWorkouts();
-        });
-
-        const startWorkoutBtn = document.getElementById('start-workout');
-        const pauseWorkoutBtn = document.getElementById('pause-workout');
-        const stopWorkoutBtn = document.getElementById('stop-workout');
-        const workoutLiveStats = document.getElementById('workout-live-stats');
-        const workoutTypeSelect = document.getElementById('workout-type');
-
-        startWorkoutBtn.addEventListener('click', () => {
-            hapticFeedback();
-            isWorkoutActive = true; isWorkoutPaused = false;
-            activeWorkoutType = workoutTypeSelect.value;
-            workoutSeconds = 0; workoutDist = 0; workoutClimb = 0;
-            document.getElementById('w-type-label').textContent = activeWorkoutType;
-            workoutLiveStats.classList.remove('hidden');
-            startWorkoutBtn.classList.add('hidden');
-            pauseWorkoutBtn.classList.remove('hidden');
-            stopWorkoutBtn.classList.remove('hidden');
-            pauseWorkoutBtn.textContent = "Pause";
-
-            if(workoutTimer) clearInterval(workoutTimer);
-            workoutTimer = setInterval(() => {
-                if(!isWorkoutPaused) {
-                    workoutSeconds++;
-                    const mins = String(Math.floor(workoutSeconds / 60)).padStart(2, '0');
-                    const secs = String(workoutSeconds % 60).padStart(2, '0');
-                    document.getElementById('w-time').textContent = `${mins}:${secs}`;
-                }
-            }, 1000);
-        });
-
-        pauseWorkoutBtn.addEventListener('click', () => {
-            hapticFeedback();
-            isWorkoutPaused = !isWorkoutPaused;
-            pauseWorkoutBtn.textContent = isWorkoutPaused ? "Resume" : "Pause";
-            document.getElementById('w-status').textContent = isWorkoutPaused ? "Paused" : "Recording...";
-            document.getElementById('w-status').className = isWorkoutPaused ? "text-amber-400" : "text-emerald-400";
-        });
-
-        stopWorkoutBtn.addEventListener('click', () => {
-            hapticFeedback();
-            if(workoutTimer) clearInterval(workoutTimer);
-            isWorkoutActive = false; isWorkoutPaused = false;
-            
-            const hours = workoutSeconds / 3600;
-            const avgSpd = hours > 0 ? (workoutDist / 1000) / hours : 0;
-            const completedWorkout = {
-                id: Date.now(),
-                type: activeWorkoutType,
-                date: new Date().toLocaleDateString(),
-                duration: document.getElementById('w-time').textContent,
-                distance: (workoutDist / 1000).toFixed(2),
-                climb: Math.round(workoutClimb),
-                avgSpeed: avgSpd.toFixed(1)
-            };
-
-            if (IS_INES_PHONE) {
-                inesWorkouts.unshift(completedWorkout);
-                localStorage.setItem('spotmegk_workouts_ines', JSON.stringify(inesWorkouts));
-            } else {
-                garyWorkouts.unshift(completedWorkout);
-                localStorage.setItem('spotmegk_workouts_gary', JSON.stringify(garyWorkouts));
-            }
-            
-            workoutLiveStats.classList.add('hidden');
-            startWorkoutBtn.classList.remove('hidden');
-            pauseWorkoutBtn.classList.add('hidden');
-            stopWorkoutBtn.classList.add('hidden');
-            renderWorkouts();
-            alert("Workout finished and saved!");
-        });
-
-        window.deleteWorkout = function(id, owner) {
-            hapticFeedback();
-            if(owner === 'gary') {
-                garyWorkouts = garyWorkouts.filter(w => w.id !== id);
-                localStorage.setItem('spotmegk_workouts_gary', JSON.stringify(garyWorkouts));
-            } else {
-                inesWorkouts = inesWorkouts.filter(w => w.id !== id);
-                localStorage.setItem('spotmegk_workouts_ines', JSON.stringify(inesWorkouts));
-            }
-            renderWorkouts();
-        }
-
-        function renderWorkouts() {
-            const listEl = document.getElementById('workout-history-list');
-            const workouts = activeWorkoutTab === 'gary' ? garyWorkouts : inesWorkouts;
-            const ownerKey = activeWorkoutTab;
-            
-            listEl.innerHTML = workouts.length === 0 ? `<div class="text-slate-500 text-center py-4">No completed workouts yet</div>` : '';
-            workouts.forEach(w => {
-                listEl.innerHTML += `
-                    <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 space-y-1">
-                        <div class="flex justify-between font-bold text-pink-400">
-                            <span>${w.type === 'Cycle' ? '🚴' : w.type === 'Walk' ? '🚶' : w.type === 'Run' ? '🏃' : '🥾'} ${w.type}</span>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] text-slate-400">${w.date}</span>
-                                <button onclick="deleteWorkout(${w.id}, '${ownerKey}')" class="text-rose-400 text-[10px] hover:underline">Del</button>
-                            </div>
-                        </div>
-                        <div class="text-[11px] grid grid-cols-2 gap-1 text-slate-300">
-                            <div>Dist: <strong>${w.distance} km</strong></div>
-                            <div>Time: <strong>${w.duration}</strong></div>
-                            <div>Climb: <strong>${w.climb} m</strong></div>
-                            <div>Avg: <strong>${w.avgSpeed} km/h</strong></div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        renderWorkouts();
-
-        function renderChat() {
-            chatMessagesEl.innerHTML = chatHistory.length === 0 ? `<div class="text-slate-500 text-center py-4">No messages yet. Say hello!</div>` : '';
-            chatHistory.forEach(msg => {
-                const isMe = msg.sender === myName;
-                chatMessagesEl.innerHTML += `
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-0.5">
-                        <span class="text-[10px] text-slate-400">${msg.sender}</span>
-                        <div class="p-2 rounded-xl text-xs max-w-[85%] ${isMe ? 'bg-pink-600 text-white rounded-br-none' : 'bg-slate-900 text-slate-200 border border-slate-700 rounded-bl-none'}">
-                            ${msg.text}
-                        </div>
-                    </div>
-                `;
-            });
-            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-        }
-
-        sendChatBtn.addEventListener('click', () => {
-            hapticFeedback();
-            const text = chatInputEl.value.trim();
-            if(!text || !currentRoom) return;
-            
-            const newMsg = { sender: myName, text, time: new Date().toISOString() };
-            chatHistory.push(newMsg);
-            localStorage.setItem(`tracker_${currentRoom}_chat`, encryptData(JSON.stringify(chatHistory), currentPin));
-            chatInputEl.value = '';
-            renderChat();
-        });
-
-        setInterval(() => {
-            if(!currentRoom) return;
-            let rawChat = localStorage.getItem(`tracker_${currentRoom}_chat`);
-            if(rawChat) {
-                const decryptedStr = decryptData(rawChat, currentPin);
-                if(decryptedStr) {
-                    const parsedChat = JSON.parse(decryptedStr);
-                    if(parsedChat.length !== chatHistory.length) {
-                        if(parsedChat.length > chatHistory.length) playChime();
-                        chatHistory = parsedChat;
-                        if(!chatSidebar.classList.contains('hidden')) renderChat();
+                    const popupContent = `<b>${partnerName}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${data.lat},${data.lng}" target="_blank" style="color:blue;">🧭 Navigate Here</a>`;
+                    if (!partnerMarker) {
+                        partnerMarker = L.marker([data.lat, data.lng], { icon: L.icon({ iconUrl: partnerImageUrl, iconSize: [40, 40], iconAnchor: [20, 40] }) }).addTo(map).bindPopup(popupContent);
+                    } else {
+                        partnerMarker.setLatLng([data.lat, data.lng]);
+                        partnerMarker.setPopupContent(popupContent);
                     }
                 }
-            }
-        }, 2000);
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; 
-            const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
-            const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
-            const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+            } catch(e) {}
         }
 
-        async function fetchWeather(lat, lng) {
-            try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,weather_code`);
-                if (!res.ok) throw new Error('Network error');
-                const data = await res.json();
-                const temp = Math.round(data.current.temperature_2m);
-                const wind = Math.round(data.current.wind_speed_10m);
-                weatherText.textContent = `${temp}°C • Wind: ${wind} km/h`;
-                hubWeatherDesc.innerHTML = `Current Temperature: <b>${temp}°C</b><br>Wind Speed: <b>${wind} km/h</b><br><span class="text-slate-400">Calibrated for County Kildare.</span>`;
-                daylightDesc.innerHTML = `🌅 Outdoor Training Hub Active<br><span class="text-slate-300">Optimal lighting conditions for Kildare routes.</span>`;
-            } catch(e) { 
-                weatherText.textContent = "Weather offline"; 
-                hubWeatherDesc.textContent = "Unable to fetch live meteorological data.";
-            }
-        }
-
-        window.sendCheckIn = function(statusMsg) {
-            hapticFeedback();
-            if(!currentRoom) return;
-            const encryptedAlert = encryptData(statusMsg, currentPin);
-            localStorage.setItem(`tracker_${currentRoom}_alert`, encryptedAlert);
-            playChime();
-            showAlertBanner(`${myName} status: ${statusMsg}`);
-        }
-
-        let lastCheckedAlertTime = null;
-        setInterval(() => {
-            if(!currentRoom) return;
-            let rawAlert = localStorage.getItem(`tracker_${currentRoom}_alert`);
-            if(rawAlert) {
-                const decryptedJson = decryptData(rawAlert, currentPin);
-                if(decryptedJson && decryptedJson !== lastCheckedAlertTime) {
-                    lastCheckedAlertTime = decryptedJson;
-                    showAlertBanner(`${partnerName} status: ${decryptedJson}`);
-                    playChime();
-                }
-            }
-        }, 3000);
-
-        let deviceBatteryPct = null;
-        if (navigator.getBattery) {
-            navigator.getBattery().then(b => deviceBatteryPct = Math.round(b.level * 100));
-        }
-
-        async function syncLocationData(lat, lng, accuracy, speed) {
-            if (!currentRoom) return;
-            try {
-                const payload = JSON.stringify({ lat, lng, accuracy, speed, battery: deviceBatteryPct, time: new Date().toISOString() });
-                localStorage.setItem(`tracker_${currentRoom}_${myRoleKey}`, encryptData(payload, currentPin));
-                
-                let rawPartner = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
-                if(rawPartner) {
-                    const decryptedPartnerStr = decryptData(rawPartner, currentPin);
-                    if(decryptedPartnerStr) {
-                        const parsed = JSON.parse(decryptedPartnerStr);
-                        partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
-                        updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
-                    }
-                }
-            } catch (err) {}
-        }
-
-        setInterval(() => {
-            if (!currentRoom) return;
-            let rawPartner = localStorage.getItem(`tracker_${currentRoom}_${partnerRoleKey}`);
-            if (rawPartner) {
-                const decryptedPartnerStr = decryptData(rawPartner, currentPin);
-                if(decryptedPartnerStr) {
-                    const parsed = JSON.parse(decryptedPartnerStr);
-                    partnerLastLat = parsed.lat; partnerLastLng = parsed.lng;
-                    updatePartnerMap(parsed.lat, parsed.lng, parsed.time, parsed.battery);
-                }
-            }
-        }, 2000);
-
-        function getMarkerIcon(speed) {
-            const iconUrl = speed > 30 ? 'https://cdn-icons-png.flaticon.com/512/741/741407.png' : myImageUrl;
-            return L.icon({ iconUrl: iconUrl, iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -40], className: 'custom-profile-marker' });
-        }
-
-        const inesIconStyle = L.icon({ iconUrl: partnerImageUrl, iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -40], className: 'custom-profile-marker' });
-
-        function updatePartnerMap(lat, lng, timestamp, battery) {
-            const secondsAgo = timestamp ? Math.round((new Date() - new Date(timestamp)) / 1000) : 0;
-            const timeText = secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo/60)}m ago`;
-            const batteryText = battery != null ? ` • 🔋 ${battery}%` : '';
-            partnerStatusEl.textContent = `(${timeText}${batteryText})`;
-
-            const popupContent = `
-                <div style="text-align:center; padding:4px;">
-                    <b>${partnerName}'s Location</b><br>
-                    <span style="font-size:11px; color:#64748b;">Updated ${timeText}${batteryText}</span><br>
-                    <button onclick="navigator.clipboard.writeText('${lat}, ${lng}');alert('Coordinates copied!');" style="margin-top:6px; background:#475569; color:white; padding:3px 8px; border-radius:4px; font-size:10px; border:none; cursor:pointer;">📋 Copy Coords</button><br>
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display:inline-block; margin-top:6px; background:#2563eb; color:white; padding:4px 10px; border-radius:6px; font-size:11px; text-decoration:none; font-weight:bold;">🧭 Navigate Here</a>
-                </div>
-            `;
-
-            if (!partnerMarker) {
-                partnerMarker = L.marker([lat, lng], { icon: inesIconStyle }).addTo(map).bindPopup(popupContent);
-            } else {
-                partnerMarker.setLatLng([lat, lng]); partnerMarker.setPopupContent(popupContent);
-            }
-        }
+        setInterval(fetchPartnerFromCloud, 2000);
 
         centerMeBtn.addEventListener('click', () => {
             hapticFeedback();
-            if (myLastLat !== null && myLastLng !== null) {
-                map.setView([myLastLat, myLastLng], 16);
-            } else {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        myLastLat = pos.coords.latitude;
-                        myLastLng = pos.coords.longitude;
-                        map.setView([myLastLat, myLastLng], 16);
-                        if (!myMarker) {
-                            myMarker = L.marker([myLastLat, myLastLng], { icon: getMarkerIcon(0) }).addTo(map).bindPopup("You");
-                        } else {
-                            myMarker.setLatLng([myLastLat, myLastLng]);
-                        }
-                    },
-                    (err) => alert("GPS Fix Failed. Please check browser location permissions."),
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            }
+            if (myLastLat !== null) map.setView([myLastLat, myLastLng], 16);
         });
 
-        centerPartnerBtn.addEventListener('click', () => { 
-            hapticFeedback(); 
-            if (partnerLastLat !== null && partnerLastLng !== null) {
-                map.setView([partnerLastLat, partnerLastLng], 16); 
-            } else {
-                alert("Waiting for partner signal..."); 
-            }
-        });
-
-        parkCarBtn.addEventListener('click', () => {
+        centerPartnerBtn.addEventListener('click', () => {
             hapticFeedback();
-            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
-            const parkSpot = { name: "🚗 Parked Car", lat: myLastLat, lng: myLastLng, category: "Parking" };
-            savedFavorites.unshift(parkSpot);
-            localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites));
-            renderFavorites();
-            alert("Parking spot saved!");
+            if (partnerLastLat !== null) map.setView([partnerLastLat, partnerLastLng], 16);
+            else alert("Waiting for partner cloud sync...");
         });
-
-        setGeofenceBtn.addEventListener('click', () => {
-            hapticFeedback();
-            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
-            const zoneName = prompt("Name this Safe Zone:", "Home");
-            if (zoneName) {
-                safeZone = { name: zoneName, lat: myLastLat, lng: myLastLng, radius: 200 };
-                localStorage.setItem('spotmegk_safezone', JSON.stringify(safeZone));
-                if(geofenceCircle) map.removeLayer(geofenceCircle);
-                geofenceCircle = L.circle([myLastLat, myLastLng], { radius: 200, color: '#14b8a6', fillColor: '#14b8a6', fillOpacity: 0.2 }).addTo(map);
-                alert(`Safe Zone '${zoneName}' set!`);
-            }
-        });
-
-        if(safeZone) {
-            geofenceCircle = L.circle([safeZone.lat, safeZone.lng], { radius: safeZone.radius, color: '#14b8a6', fillColor: '#14b8a6', fillOpacity: 0.2 }).addTo(map);
-        }
-
-        meetHereBtn.addEventListener('click', () => {
-            hapticFeedback();
-            if (meetBeaconMarker) { map.removeLayer(meetBeaconMarker); meetBeaconMarker = null; alert("Beacon removed."); return; }
-            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
-            meetBeaconMarker = L.marker([myLastLat, myLastLng], {
-                icon: L.divIcon({ className: 'custom-div-icon', html: `<div class="beacon-pulse" style='background-color:#6366f1; width:34px; height:34px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow: 0 0 15px #6366f1;'>📍</div>`, iconSize: [34, 34], iconAnchor: [17, 17] })
-            }).addTo(map).bindPopup("<b>Beacon: Meet Here!</b>").openPopup();
-        });
-
-        sosBtn.addEventListener('click', () => {
-            hapticFeedback();
-            if (!myLastLat) { alert("Acquiring GPS fix for SOS..."); return; }
-            window.location.href = `sms:${targetSOSNumber}?body=${encodeURIComponent(`🚨 SOS! Location: https://www.google.com/maps?q=${myLastLat},${myLastLng}`)}`;
-        });
-
-        function updateStats() {
-            const elapsedHours = (new Date() - tripStartTime) / 3600000;
-            const avgSpeed = elapsedHours > 0 ? (totalDistance / 1000) / elapsedHours : 0;
-            statsContentEl.innerHTML = `
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Total Distance:</b> ${(totalDistance/1000).toFixed(2)} km</div>
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Elevation Gain:</b> ${Math.round(elevationGain)} meters</div>
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Top Speed:</b> ${topSpeed} km/h</div>
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Average Speed:</b> ${avgSpeed.toFixed(1)} km/h</div>
-                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700"><b>Active Time:</b> ${Math.round((new Date() - tripStartTime)/60000)} mins</div>
-                <button onclick="exportDataToDrive()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-semibold mt-2">💾 Backup Data</button>
-                <button onclick="if(myLastLat){navigator.clipboard.writeText(myLastLat+', '+myLastLng);alert('My coordinates copied!');}" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg border border-slate-600 font-semibold mt-1">📋 Copy My Coordinates</button>
-            `;
-        }
-
-        function renderFavorites() {
-            favCountEl.textContent = savedFavorites.length;
-            favoritesListEl.innerHTML = savedFavorites.length === 0 ? `<div class="text-slate-500 text-center py-8">No favorites yet</div>` : '';
-            savedFavorites.forEach((fav, i) => {
-                const catColor = fav.category === 'Coffee' ? 'text-amber-400' : fav.category === 'Scenic' ? 'text-emerald-400' : 'text-pink-400';
-                favoritesListEl.innerHTML += `<div class="bg-slate-900 p-2.5 rounded-xl border border-slate-700 flex flex-col gap-1"><div class="flex justify-between"><b class="${catColor}">📌 ${fav.name}</b><button onclick="deleteFavorite(${i})" class="text-rose-400">Del</button></div><a href="https://www.google.com/maps/dir/?api=1&destination=${fav.lat},${fav.lng}" target="_blank" class="bg-blue-600 text-white py-1 rounded text-center">🧭 Navigate</a></div>`;
-            });
-        }
-        window.deleteFavorite = (i) => { savedFavorites.splice(i,1); localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); renderFavorites(); }
-
-        saveSpotBtn.addEventListener('click', () => {
-            hapticFeedback();
-            if (!myLastLat) { alert("Waiting for GPS lock..."); return; }
-            const name = prompt("Name this spot:", "Spot");
-            const category = prompt("Category (Coffee, Scenic, Maintenance, General):", "General");
-            if (name) { 
-                savedFavorites.push({ name, lat: myLastLat, lng: myLastLng, category: category || 'General' }); 
-                localStorage.setItem('spotmegk_favorites', JSON.stringify(savedFavorites)); 
-                renderFavorites(); 
-            }
-        });
-
-        renderFavorites();
 
         function startTracking() {
             if (!navigator.geolocation) return;
-            const options = {
-                enableHighAccuracy: !isBatterySaver,
-                maximumAge: isBatterySaver ? 15000 : 5000,
-                timeout: 10000
-            };
-            watchID = navigator.geolocation.watchPosition((pos) => {
-                if (!isSharing) return;
-                const lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Math.round(pos.coords.accuracy);
-                const currentAlt = pos.coords.altitude;
+            navigator.geolocation.watchPosition((pos) => {
+                const lat = pos.coords.latitude, lng = pos.coords.longitude;
                 myLastLat = lat; myLastLng = lng;
-                
-                let speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
-
-                if (isWorkoutActive && !isWorkoutPaused) {
-                    if (speedKmh > 1) {
-                        breadcrumbCoordinates.push([lat, lng]);
-                        breadcrumbPolyline.setLatLngs(breadcrumbCoordinates);
-                        if (lastLat && lastLng) {
-                            const stepDist = calculateDistance(lastLat, lastLng, lat, lng);
-                            workoutDist += stepDist;
-                        }
-                        if (currentAlt !== null && lastAltitude !== null) {
-                            const altDiff = currentAlt - lastAltitude;
-                            if (altDiff > 0 && altDiff < 10) workoutClimb += altDiff;
-                        }
-                        const activeHrs = workoutSeconds / 3600;
-                        const wAvgSpd = activeHrs > 0 ? (workoutDist / 1000) / activeHrs : 0;
-
-                        document.getElementById('w-dist').textContent = `${(workoutDist/1000).toFixed(2)} km`;
-                        document.getElementById('w-climb').textContent = `${Math.round(workoutClimb)} m`;
-                        document.getElementById('w-avg-speed').textContent = `${wAvgSpd.toFixed(1)} km/h`;
-                    }
-                }
-
-                if (currentAlt !== null && lastAltitude !== null) {
-                    const altDiff = currentAlt - lastAltitude;
-                    if (altDiff > 0 && altDiff < 10) elevationGain += altDiff;
-                }
-                if (currentAlt !== null) lastAltitude = currentAlt;
-
-                if(speedKmh > topSpeed) topSpeed = speedKmh;
-                if(lastLat && lastLng) {
-                    const d = calculateDistance(lastLat, lastLng, lat, lng);
-                    totalDistance += d;
-                    recordDailyLog(d, elevationGain, topSpeed);
-                }
-                lastLat = lat; lastLng = lng;
+                const speedKmh = pos.coords.speed != null ? Math.round(pos.coords.speed * 3.6) : 0;
 
                 speedValEl.textContent = `${speedKmh}k/h`;
-                climbValEl.textContent = `${Math.round(elevationGain)}m`;
-
-                if (safeZone) {
-                    const distToSafeZone = calculateDistance(lat, lng, safeZone.lat, safeZone.lng);
-                    if (distToSafeZone <= safeZone.radius && (!window.wasInSafeZone)) {
-                        window.wasInSafeZone = true;
-                        sendCheckIn(`Arrived safely at ${safeZone.name}!`);
-                    } else if (distToSafeZone > safeZone.radius + 50) {
-                        window.wasInSafeZone = false;
-                    }
-                }
 
                 if (!myMarker) {
-                    myMarker = L.marker([lat, lng], { icon: getMarkerIcon(speedKmh) }).addTo(map).bindPopup("You");
+                    myMarker = L.marker([lat, lng], { icon: L.icon({ iconUrl: myImageUrl, iconSize: [40, 40], iconAnchor: [20, 40] }) }).addTo(map).bindPopup("You");
                     map.setView([lat, lng], 15);
-                    fetchWeather(lat, lng);
                 } else {
                     myMarker.setLatLng([lat, lng]);
-                    myMarker.setIcon(getMarkerIcon(speedKmh));
                 }
-                syncLocationData(lat, lng, acc, speedKmh);
-            }, (err) => {
-                console.log("Waiting for GPS signal...");
-            }, options);
+                syncToCloud(lat, lng, speedKmh);
+            }, null, { enableHighAccuracy: true });
         }
         startTracking();
     </script>
