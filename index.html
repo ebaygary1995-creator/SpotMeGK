@@ -34,6 +34,22 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
+    <!-- Profile Login Modal (Shown if profile not set) -->
+    <div id="profile-modal" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4">
+            <h2 class="text-lg font-bold text-pink-400">👤 Who is using this device?</h2>
+            <p class="text-xs text-slate-300">Select your profile to automatically configure your location sync channel:</p>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="setProfile('gary')" class="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-xl font-bold flex flex-col items-center gap-2 shadow">
+                    <span class="text-2xl">👨‍💻</span> Gary
+                </button>
+                <button onclick="setProfile('ines')" class="bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-xl font-bold flex flex-col items-center gap-2 shadow">
+                    <span class="text-2xl">👩‍⚕️</span> Ines
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Header / Mobile POV Optimized -->
     <header class="bg-slate-800 border-b border-slate-700 px-2 py-2 shadow-md flex justify-between items-center z-30">
         <h1 class="text-xs sm:text-sm font-bold flex items-center gap-1">
@@ -46,6 +62,7 @@
         </div>
 
         <div class="flex items-center gap-0.5 sm:gap-1">
+            <button onclick="switchProfilePrompt()" class="bg-slate-700 hover:bg-slate-600 text-cyan-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-slate-600" id="current-profile-btn">👤 Profile</button>
             <button id="toggle-goals" class="bg-amber-600/30 hover:bg-amber-600/40 text-amber-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-amber-500/40">🎯 Goals</button>
             <button id="toggle-workouts" class="bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-emerald-500/40">🏃 Workouts</button>
             <button id="toggle-weight" class="bg-cyan-600/30 hover:bg-cyan-600/40 text-cyan-300 px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border border-cyan-500/40">⚖️ Weight</button>
@@ -60,7 +77,8 @@
     <!-- Configuration & Quick Status Bar -->
     <div class="bg-slate-800/90 p-1.5 sm:p-2 border-b border-slate-700 flex flex-wrap gap-1.5 items-center justify-between text-xs z-30 shadow-md">
         <div class="flex items-center gap-1">
-            <input type="text" id="room-input" placeholder="Room-PIN (gary-ines-1995)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[10px] sm:text-[11px] text-white focus:outline-none focus:border-pink-500 w-32 sm:w-36">
+            <span class="text-[11px] text-slate-300 font-semibold">Room:</span>
+            <input type="text" id="room-input" placeholder="gary-ines-1995" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[10px] sm:text-[11px] text-white focus:outline-none focus:border-pink-500 w-32 sm:w-36">
             <button id="save-room" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px] sm:text-[11px] font-medium">Save</button>
         </div>
         
@@ -73,7 +91,7 @@
 
         <div class="flex items-center gap-1">
             <button id="center-me" class="bg-pink-600/20 border border-pink-500/40 text-pink-300 px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold">🔴 Me</button>
-            <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2 py-1 rounded text-[10px] font-semibold">🟣 Ines <span id="partner-status" class="text-[8px] text-slate-400"></span></button>
+            <button id="center-partner" class="bg-purple-600/20 border border-purple-500/40 text-purple-300 px-2 py-1 rounded text-[10px] font-semibold"><span id="partner-label">Partner</span> <span id="partner-status" class="text-[8px] text-slate-400"></span></button>
             <button id="toggle-follow" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Auto-Follow">👀 <span id="follow-label">Off</span></button>
             <button id="toggle-mode" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600" title="Toggle Battery Mode">⚡ <span id="mode-label">Fast</span></button>
             <button id="toggle-theme" class="bg-slate-700 text-slate-300 px-1.5 py-1 rounded text-[10px] border border-slate-600">🌗</button>
@@ -96,7 +114,6 @@
             <div id="favorites-list" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs"></div>
         </div>
 
-        <!-- Goals Sidebar -->
         <div id="goals-sidebar" class="w-72 sm:w-80 bg-slate-800 border-l border-slate-700 flex flex-col z-20 shadow-2xl hidden">
             <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800/90">
                 <h2 class="font-bold text-sm text-slate-200">🎯 Countdown Goal Counter</h2>
@@ -266,19 +283,41 @@
         const GITHUB_REPO = "SpotMeGK";
         const GARY_PHONE = "+353858086112";
         const INES_PHONE = "+353873871437";
-        const IS_INES_PHONE = false; 
 
+        // Profile System State Initialization
+        let activeProfile = localStorage.getItem('spotmegk_profile') || null;
+        if (!activeProfile) {
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        window.setProfile = function(profile) {
+            hapticFeedback();
+            localStorage.setItem('spotmegk_profile', profile);
+            activeProfile = profile;
+            document.getElementById('profile-modal').classList.add('hidden');
+            window.location.reload();
+        }
+
+        window.switchProfilePrompt = function() {
+            hapticFeedback();
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        const IS_INES_PHONE = (activeProfile === 'ines');
         const targetSOSNumber = IS_INES_PHONE ? GARY_PHONE : INES_PHONE;
         const myRoleKey = IS_INES_PHONE ? 'ines' : 'gary';
         const partnerRoleKey = IS_INES_PHONE ? 'gary' : 'ines';
         const myName = IS_INES_PHONE ? 'Ines' : 'Gary';
         const partnerName = IS_INES_PHONE ? 'Gary' : 'Ines';
 
+        document.getElementById('current-profile-btn').textContent = `👤 ${myName}`;
+        document.getElementById('partner-label').textContent = partnerName;
+
         let currentRoom = localStorage.getItem('spotmegk_room') || 'gary-ines-1995';
         const currentPin = '1995';
 
-        const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/gary.png`;
-        const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/ines.png`;
+        const myImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${myRoleKey}.png`;
+        const partnerImageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${partnerRoleKey}.png`;
 
         const map = L.map('map').setView([53.1438, -6.97], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
@@ -504,7 +543,6 @@
         document.getElementById('toggle-weight').addEventListener('click', () => { hapticFeedback(); closeAllSidebars(); weightSidebar.classList.toggle('hidden'); renderWeightTracker(); });
         document.getElementById('close-weight').addEventListener('click', () => weightSidebar.classList.add('hidden'));
 
-        // Countdown Goals Logic
         document.getElementById('save-goal-btn').addEventListener('click', () => {
             hapticFeedback();
             const name = document.getElementById('goal-name-input').value.trim();
@@ -1110,34 +1148,3 @@
                     recordDailyLog(d, elevationGain, topSpeed);
                 }
                 lastLat = lat; lastLng = lng;
-
-                speedValEl.textContent = `${speedKmh}k/h`;
-                climbValEl.textContent = `${Math.round(elevationGain)}m`;
-
-                if (safeZone) {
-                    const distToSafeZone = calculateDistance(lat, lng, safeZone.lat, safeZone.lng);
-                    if (distToSafeZone <= safeZone.radius && (!window.wasInSafeZone)) {
-                        window.wasInSafeZone = true;
-                        sendCheckIn(`Arrived safely at ${safeZone.name}!`);
-                    } else if (distToSafeZone > safeZone.radius + 50) {
-                        window.wasInSafeZone = false;
-                    }
-                }
-
-                if (!myMarker) {
-                    myMarker = L.marker([lat, lng], { icon: getMarkerIcon(speedKmh) }).addTo(map).bindPopup("You");
-                    map.setView([lat, lng], 15);
-                    fetchWeather(lat, lng);
-                } else {
-                    myMarker.setLatLng([lat, lng]);
-                    myMarker.setIcon(getMarkerIcon(speedKsmh));
-                }
-                syncLocationData(lat, lng, acc, speedKmh);
-            }, (err) => {
-                console.log("Waiting for GPS signal...");
-            }, options);
-        }
-        startTracking();
-    </script>
-</body>
-</html>
