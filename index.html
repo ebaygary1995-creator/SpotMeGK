@@ -34,18 +34,22 @@
 </head>
 <body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
 
-    <!-- Profile Login Modal -->
+    <!-- Secure Profile Login Modal with PINs -->
     <div id="profile-modal" class="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4">
-            <h2 class="text-lg font-bold text-pink-400">👤 Who is using this device?</h2>
-            <p class="text-xs text-slate-300">Select your profile to automatically configure your location sync channel:</p>
-            <div class="grid grid-cols-2 gap-3 pt-2">
-                <button onclick="setProfile('gary')" class="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-xl font-bold flex flex-col items-center gap-2 shadow">
-                    <span class="text-2xl">👨‍💻</span> Gary
-                </button>
-                <button onclick="setProfile('ines')" class="bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-xl font-bold flex flex-col items-center gap-2 shadow">
-                    <span class="text-2xl">👩‍⚕️</span> Ines
-                </button>
+            <h2 class="text-lg font-bold text-pink-400">🔒 Secure Couple Login</h2>
+            <p class="text-xs text-slate-300">Select your profile and enter your private PIN:</p>
+            <div class="space-y-3 pt-2">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="font-bold text-cyan-400 flex items-center justify-center gap-1"><span>👨‍💻</span> Gary</div>
+                    <input type="password" id="gary-pin" placeholder="Enter PIN (4321)" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white text-center text-sm tracking-widest focus:outline-none focus:border-cyan-500">
+                    <button onclick="loginProfile('gary')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-1.5 rounded-lg font-bold text-xs shadow">Login as Gary</button>
+                </div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="font-bold text-purple-400 flex items-center justify-center gap-1"><span>👩‍⚕️</span> Ines</div>
+                    <input type="password" id="ines-pin" placeholder="Enter PIN (1234)" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white text-center text-sm tracking-widest focus:outline-none focus:border-purple-500">
+                    <button onclick="loginProfile('ines')" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-1.5 rounded-lg font-bold text-xs shadow">Login as Ines</button>
+                </div>
             </div>
         </div>
     </div>
@@ -271,7 +275,7 @@
         <button id="save-spot" class="bg-slate-700 hover:bg-slate-600 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap border border-slate-600">📌 Save</button>
         <button id="park-car-btn" class="bg-amber-600 hover:bg-amber-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🚗 Park</button>
         <button id="set-geofence" class="bg-teal-600 hover:bg-teal-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-semibold whitespace-nowrap">🛡️ Zone</button>
-        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
+        <button id="sos-btn" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] sm:text-[11px] font-bold whitespace-nowrap animate-pulse">🚨 SOS</button>
         <div class="text-[9px] sm:text-[10px] text-slate-400 flex flex-col border-l border-slate-700 pl-2 whitespace-nowrap">
             <span>Spd: <strong id="speed-val" class="text-emerald-400">0k/h</strong></span>
             <span>Climb: <strong id="climb-val" class="text-sky-400">0m</strong></span>
@@ -289,8 +293,16 @@
             document.getElementById('profile-modal').classList.remove('hidden');
         }
 
-        window.setProfile = function(profile) {
+        window.loginProfile = function(profile) {
             hapticFeedback();
+            const pinInput = document.getElementById(profile === 'gary' ? 'gary-pin' : 'ines-pin').value.trim();
+            const correctPin = profile === 'gary' ? '4321' : '1234';
+            
+            if (pinInput !== correctPin) {
+                alert("Incorrect PIN! Gary's PIN is 4321, Ines's PIN is 1234.");
+                return;
+            }
+            
             localStorage.setItem('spotmegk_profile', profile);
             activeProfile = profile;
             document.getElementById('profile-modal').classList.add('hidden');
